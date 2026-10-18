@@ -40,7 +40,7 @@ jobs:
       - name: Check release metadata and tooling tests
         run: |
           node scripts/release-tools.mjs check-version
-          node --test scripts/release-tools.test.mjs
+          node --test scripts/release-tools.node-test.mjs
       - run: npm ci
       - name: Frontend tests and production assets
         run: |
