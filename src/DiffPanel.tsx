@@ -21,6 +21,7 @@ import {
 import type { Diff, File, Snapshot } from './mygo';
 import { parseDiff, splitDiff, type DiffLine } from './git-view';
 import { Dialog } from './Dialog';
+import { useDiffHighlight } from './useDiffHighlight';
 
 export type Selection =
   | { kind: 'file'; path: string; staged: boolean }
@@ -100,6 +101,16 @@ export function DiffPanel({
   const lines = useMemo(() => parseDiff(diff?.text || '', 3001), [diff?.text]);
   const visible = useMemo(() => lines.slice(0, 3000), [lines]);
   const rows = useMemo(() => splitDiff(visible), [visible]);
+  const { spans: highlights, mode: highlightMode } = useDiffHighlight(visible, diff?.path || '');
+  const code = (line: DiffLine) =>
+    highlights.get(line)?.map((span, i) => (
+      <span
+        key={i}
+        className={`${span.type ? `token syntax-${span.type}` : ''}${span.changed ? ' word-change' : ''}`}
+      >
+        {span.text}
+      </span>
+    )) || line.text.slice(1);
   const file =
     selection?.kind === 'file' ? snapshot.files.find((f) => f.path === selection.path) : null;
   const commit =
@@ -167,12 +178,13 @@ export function DiffPanel({
       <span className="line-symbol">
         {line?.kind === 'add' ? '+' : line?.kind === 'remove' ? '−' : ''}
       </span>
-      <code>{line ? line.text.slice(1) || ' ' : ' '}</code>
+      <code>{line ? code(line) : ' '}</code>
     </div>
   );
   const panel = (
     <section
       className={`diff-panel diff-reader ${options.wrap ? 'wrap-lines' : ''} ${focused ? 'is-focused' : ''}`}
+      data-highlight-mode={highlightMode}
       aria-label="差异详情"
     >
       <div className="diff-reader-heading">
@@ -262,7 +274,7 @@ export function DiffPanel({
             aria-pressed={options.metadata}
             onClick={() => setOptions({ ...options, metadata: !options.metadata })}
           >
-            补丁头
+            差异元信息
           </button>
         </div>
       </div>
@@ -335,7 +347,7 @@ export function DiffPanel({
                       <span className="line-symbol">
                         {line.kind === 'add' ? '+' : line.kind === 'remove' ? '−' : ''}
                       </span>
-                      <code>{line.text.slice(1) || ' '}</code>
+                      <code>{code(line)}</code>
                     </div>
                   ),
                 )}
@@ -353,7 +365,13 @@ export function DiffPanel({
               : '暂存操作不改动工作区文件'
             : '只读对比，不修改文件'}
         </span>
-        <span>{focused ? 'Esc 退出专注' : 'UTF-8'}</span>
+        <span>
+          {focused
+            ? 'Esc 退出专注'
+            : highlightMode === 'plain'
+              ? '纯文本 · 高亮准备中或已降级'
+              : '语法 / 行内高亮 · UTF-8'}
+        </span>
       </div>
     </section>
   );

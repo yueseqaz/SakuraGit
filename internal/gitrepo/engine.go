@@ -19,9 +19,11 @@ import (
 const outputLimit = 4 << 20
 
 type Engine struct {
-	mu         sync.Mutex
-	root       string
-	operations []Operation
+	mu           sync.Mutex
+	root         string
+	cloneMu      sync.Mutex
+	clone        *cloneJob
+	historyCache *HistoryPage
 }
 
 type limitedOutput struct {
@@ -45,33 +47,39 @@ func run(ctx context.Context, root string, args ...string) (string, error) {
 }
 
 func runInput(ctx context.Context, root, input string, args ...string) (string, error) {
-	ctx, cancel := context.WithTimeout(ctx, 90*time.Second)
-	defer cancel()
-	base := []string{"--no-pager", "--literal-pathspecs", "-c", "color.ui=false", "-c", "core.quotePath=false"}
-	if root != "" {
-		base = append(base, "-C", root)
+	timeout := 90 * time.Second
+	progress, _ := ctx.Value(progressKey{}).(progressContext)
+	if progress.network {
+		timeout = cloneTimeout
 	}
-	cmd := exec.CommandContext(ctx, "git", append(base, args...)...)
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	cmd := gitCommand(ctx, root, args...)
+	configureCloneProcess(cmd)
 	if input != "" {
 		cmd.Stdin = strings.NewReader(input)
 	}
-	cmd.WaitDelay = 2 * time.Second
-	// Repository selection must not be overridden by a launching shell's Git variables.
-	for _, value := range os.Environ() {
-		key := strings.SplitN(value, "=", 2)[0]
-		if !strings.HasPrefix(key, "GIT_") && key != "LC_ALL" {
-			cmd.Env = append(cmd.Env, value)
-		}
-	}
-	cmd.Env = append(cmd.Env, "GIT_TERMINAL_PROMPT=0", "GIT_OPTIONAL_LOCKS=0", "LC_ALL=C")
 	var stdout, stderr limitedOutput
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
+	stream := &cloneOutput{progress: func(line string) { reportProgress(ctx, line) }}
+	if progress.network {
+		cmd.Stderr = stream
+	}
 	err := cmd.Run()
+	if progress.network {
+		stream.flush()
+	}
 	if ctx.Err() != nil {
-		return "", fmt.Errorf("Git 操作已取消或超时: %w", ctx.Err())
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			return "", fmt.Errorf("Git 操作超时: %w", ctx.Err())
+		}
+		return "", fmt.Errorf("Git 操作已取消: %w", ctx.Err())
 	}
 	if err != nil {
 		message := strings.TrimSpace(stderr.String())
+		if progress.network {
+			message = strings.TrimSpace(stream.tail)
+		}
 		if message == "" {
 			message = err.Error()
 		}
@@ -81,6 +89,24 @@ func runInput(ctx context.Context, root, input string, args ...string) (string, 
 		return "", errors.New("Git 输出超过 4 MB，请使用命令行查看此大型仓库或文件")
 	}
 	return stdout.String(), nil
+}
+
+func gitCommand(ctx context.Context, root string, args ...string) *exec.Cmd {
+	base := []string{"--no-pager", "--literal-pathspecs", "-c", "color.ui=false", "-c", "core.quotePath=false"}
+	if root != "" {
+		base = append(base, "-C", root)
+	}
+	cmd := exec.CommandContext(ctx, "git", append(base, args...)...)
+	cmd.WaitDelay = 2 * time.Second
+	// Repository selection must not be overridden by a launching shell's Git variables.
+	for _, value := range os.Environ() {
+		key := strings.SplitN(value, "=", 2)[0]
+		if !strings.HasPrefix(key, "GIT_") && key != "LC_ALL" {
+			cmd.Env = append(cmd.Env, value)
+		}
+	}
+	cmd.Env = append(cmd.Env, "GIT_TERMINAL_PROMPT=0", "GIT_OPTIONAL_LOCKS=0", "LC_ALL=C")
+	return cmd
 }
 
 func (e *Engine) Open(ctx context.Context, path string) (Snapshot, error) {
@@ -97,11 +123,15 @@ func (e *Engine) Open(ctx context.Context, path string) (Snapshot, error) {
 	if err != nil {
 		return Snapshot{}, fmt.Errorf("无法打开 Git 工作区: %w", err)
 	}
-	previousRoot, previousOperations := e.root, e.operations
-	e.root, e.operations = strings.TrimSuffix(root, "\n"), nil
+	previousRoot, previousCache := e.root, e.historyCache
+	e.root = strings.TrimSuffix(root, "\n")
+	if e.root != previousRoot {
+		e.historyCache = nil
+	}
 	snapshot, err := e.snapshot(ctx)
 	if err != nil {
-		e.root, e.operations = previousRoot, previousOperations
+		e.root = previousRoot
+		e.historyCache = previousCache
 	}
 	return snapshot, err
 }
@@ -174,7 +204,7 @@ func (e *Engine) snapshot(ctx context.Context) (Snapshot, error) {
 		return s, err
 	}
 	s.Root, s.Name = e.root, filepath.Base(e.root)
-	s.Operations = append([]Operation{}, e.operations...)
+
 	s.Branches, s.Commits, s.Worktrees, s.Remotes = []Branch{}, []Commit{}, []Worktree{}, []string{}
 	gitdir, err := run(ctx, e.root, "rev-parse", "--absolute-git-dir")
 	if err != nil {
@@ -206,18 +236,11 @@ func (e *Engine) snapshot(ctx context.Context) (Snapshot, error) {
 			}
 		}
 	}
-	if !s.Unborn {
-		raw, err = run(ctx, e.root, "log", "--no-show-signature", "--branches", "--remotes", "HEAD", "--topo-order", "-100", "--format=%H%x00%h%x00%P%x00%s%x00%an%x00%aI%x00%D%x00%ae")
-		if err != nil {
-			return s, err
-		}
-		for _, line := range strings.Split(strings.TrimSuffix(raw, "\n"), "\n") {
-			f := strings.SplitN(line, "\x00", 8)
-			if len(f) == 8 {
-				s.Commits = append(s.Commits, Commit{Hash: f[0], Short: f[1], Parents: strings.Fields(f[2]), Subject: f[3], Author: f[4], Date: f[5], Refs: f[6], AuthorEmail: f[7]})
-			}
-		}
+	page, err := e.history(ctx, "", "", 0)
+	if err != nil {
+		return s, err
 	}
+	s.Commits, s.HistoryHasMore, s.HistoryRevision = page.Commits, page.HasMore, page.Revision
 	raw, err = run(ctx, e.root, "remote")
 	if err != nil {
 		return s, err
@@ -371,19 +394,6 @@ func findFile(files []File, path string) (File, bool) {
 	return File{}, false
 }
 
-func (e *Engine) record(label, output string, err error) {
-	if err != nil {
-		output = err.Error()
-	}
-	if len(output) > 800 {
-		output = string([]rune(output)[:min(800, len([]rune(output)))])
-	}
-	e.operations = append([]Operation{{Label: label, Detail: strings.TrimSpace(output), Success: err == nil, Time: time.Now().Format(time.RFC3339)}}, e.operations...)
-	if len(e.operations) > 40 {
-		e.operations = e.operations[:40]
-	}
-}
-
 func (e *Engine) Stage(ctx context.Context, root string, paths []string, staged bool) (Result, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -398,9 +408,9 @@ func (e *Engine) Stage(ctx context.Context, root string, paths []string, staged 
 		return Result{}, err
 	}
 	args := []string{"add", "-A", "--"}
-	label := "暂存文件"
+
 	if !staged {
-		label = "取消暂存"
+
 		if _, err := run(ctx, e.root, "rev-parse", "--verify", "HEAD"); err != nil {
 			args = []string{"rm", "--cached", "-r", "-f", "--ignore-unmatch", "--"}
 		} else {
@@ -418,7 +428,7 @@ func (e *Engine) Stage(ctx context.Context, root string, paths []string, staged 
 		}
 	}
 	out, err := run(ctx, e.root, args...)
-	e.record(label, strings.Join(paths, ", ")+"\n"+out, err)
+
 	return Result{Output: out}, err
 }
 
@@ -449,7 +459,7 @@ func (e *Engine) Commit(ctx context.Context, root, message string) (Result, erro
 		return Result{}, errors.New("请先暂存要提交的文件")
 	}
 	out, err := run(ctx, e.root, "commit", "-m", message)
-	e.record("创建提交", out, err)
+
 	return Result{Output: out}, err
 }
 
@@ -473,10 +483,10 @@ func (e *Engine) Branch(ctx context.Context, root, name string, create bool) (Re
 		return Result{}, errors.New("为保护工作区，请先提交修改，并完成正在进行的 Git 操作")
 	}
 	args := []string{"switch", "--no-guess"}
-	label := "切换分支"
+
 	if create {
 		args = append(args, "-c")
-		label = "创建分支"
+
 	} else {
 		found := false
 		for _, b := range s.Branches {
@@ -488,7 +498,7 @@ func (e *Engine) Branch(ctx context.Context, root, name string, create bool) (Re
 	}
 	args = append(args, name)
 	out, err := run(ctx, e.root, args...)
-	e.record(label+" "+name, out, err)
+
 	return Result{Output: out}, err
 }
 
@@ -516,7 +526,7 @@ func (e *Engine) sync(ctx context.Context, root, action, branch, remote, target 
 	var args []string
 	switch action {
 	case "fetch":
-		args = []string{"fetch", "--all"}
+		args = []string{"fetch", "--progress", "--all"}
 		if len(s.Remotes) == 0 {
 			return Result{}, errors.New("此仓库没有配置远程仓库")
 		}
@@ -531,18 +541,18 @@ func (e *Engine) sync(ctx context.Context, root, action, branch, remote, target 
 			if len(s.Files) != 0 {
 				return Result{}, errors.New("拉取前请先提交工作区修改")
 			}
-			args = []string{"-c", "merge.autostash=false", "pull", "--ff-only", "--no-rebase", s.UpstreamRemote, "refs/heads/" + s.UpstreamBranch}
+			args = []string{"-c", "merge.autostash=false", "pull", "--progress", "--ff-only", "--no-rebase", s.UpstreamRemote, "refs/heads/" + s.UpstreamBranch}
 		} else {
 			if s.Behind > 0 {
 				return Result{}, errors.New("远程存在尚未整合的提交，请先拉取")
 			}
 			// Use the checked target directly; do not re-read a potentially changed refspec.
-			args = []string{"push", "--no-force", "--no-follow-tags", "--recurse-submodules=no", s.UpstreamRemote, "HEAD:refs/heads/" + s.UpstreamBranch}
+			args = []string{"push", "--progress", "--no-force", "--no-follow-tags", "--recurse-submodules=no", s.UpstreamRemote, "HEAD:refs/heads/" + s.UpstreamBranch}
 		}
 	default:
 		return Result{}, errors.New("不支持的同步操作")
 	}
 	out, err := run(ctx, e.root, args...)
-	e.record(strings.ToUpper(action[:1])+action[1:], out, err)
+
 	return Result{Output: out}, err
 }

@@ -1,4 +1,4 @@
-"""Regenerate the Gitlane application icon (requires Pillow)."""
+"""Regenerate the SakuraGit application icon (requires Pillow)."""
 
 from pathlib import Path
 

@@ -13,7 +13,7 @@ func TestCommitDetailsAndFileDiff(t *testing.T) {
 	ctx := context.Background()
 	initial := git(t, root, "rev-parse", "HEAD")
 	d, err := e.CommitDetails(ctx, root, initial)
-	if err != nil || len(d.Files) != 1 || d.Files[0].Additions != 1 || d.Commit.AuthorEmail != "gitlane@example.invalid" {
+	if err != nil || len(d.Files) != 1 || d.Files[0].Additions != 1 || d.Commit.AuthorEmail != "sakuragit@example.invalid" {
 		t.Fatalf("root: %+v %v", d, err)
 	}
 	if err := os.Rename(filepath.Join(root, "hello.txt"), filepath.Join(root, "new\nname.txt")); err != nil {
@@ -24,7 +24,7 @@ func TestCommitDetailsAndFileDiff(t *testing.T) {
 	git(t, root, "commit", "--author=Original Author <original@example.invalid>", "-m", "rename", "-m", "Detailed body\nwith another line")
 	hash := git(t, root, "rev-parse", "HEAD")
 	d, err = e.CommitDetails(ctx, root, hash)
-	if err != nil || len(d.Files) != 2 || d.Commit.Author != "Original Author" || d.Committer != "Gitlane Test" || !strings.Contains(d.Body, "another line") {
+	if err != nil || len(d.Files) != 2 || d.Commit.Author != "Original Author" || d.Committer != "SakuraGit Test" || !strings.Contains(d.Body, "another line") {
 		t.Fatalf("details: %+v %v", d, err)
 	}
 	for _, f := range d.Files {

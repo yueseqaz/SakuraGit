@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { isMyGo } from 'mygo-runtime';
 import { Copy, FileText, LoaderCircle } from 'lucide-react';
 import { Git, type Commit, type CommitDetails, type Diff } from './mygo';
+import { ResizableSplit } from './ResizableSplit';
 import { demoDiff } from './demo';
 
 const native = isMyGo();
@@ -127,82 +128,97 @@ export function HistoryDetails({
   const c = details.commit;
   return (
     <section className="commit-details" aria-label="提交详情">
-      <div className="commit-summary">
-        <div className="detail-eyebrow">
-          COMMIT / {c.short}
-          <button className="button compact" onClick={() => void copy()}>
-            <Copy size={12} />
-            {copiedHash === commit.hash ? '已复制' : '复制 ID'}
-          </button>
-        </div>
-        {copyError && (
-          <p className="committer-note" role="status">
-            {copyError}
-          </p>
-        )}
-        <h2>{c.subject}</h2>
-        <div className="author-identity">
-          <span className="author-avatar">{c.author.slice(0, 2).toUpperCase()}</span>
-          <div>
-            <strong>{c.author}</strong>
-            <span>{c.authorEmail}</span>
+      <ResizableSplit
+        className="commit-details-body"
+        name="commit-details"
+        label="调整提交信息与差异高度"
+        axis="vertical"
+        initial={0.43}
+        minFirst={120}
+        minSecond={160}
+      >
+        <div className="commit-overview">
+          <div className="commit-summary">
+            <div className="detail-eyebrow">
+              COMMIT / {c.short}
+              <button className="button compact" onClick={() => void copy()}>
+                <Copy size={12} />
+                {copiedHash === commit.hash ? '已复制' : '复制 ID'}
+              </button>
+            </div>
+            {copyError && (
+              <p className="committer-note" role="status">
+                {copyError}
+              </p>
+            )}
+            <h2>{c.subject}</h2>
+            <div className="author-identity">
+              <span className="author-avatar">{c.author.slice(0, 2).toUpperCase()}</span>
+              <div>
+                <strong>{c.author}</strong>
+                <span>{c.authorEmail}</span>
+              </div>
+              <time>{new Date(c.date).toLocaleString('zh-CN')}</time>
+            </div>
+            {(details.committer !== c.author ||
+              details.committerEmail !== c.authorEmail ||
+              details.committedAt !== c.date) && (
+              <p className="committer-note">
+                提交者：{details.committer} &lt;{details.committerEmail}&gt; ·{' '}
+                {new Date(details.committedAt).toLocaleString('zh-CN')}
+              </p>
+            )}
+            {details.body && (
+              <details className="commit-body">
+                <summary>提交说明</summary>
+                <p>{details.body}</p>
+              </details>
+            )}
+            <p className="comparison-note">
+              {c.parents.length > 1
+                ? `合并提交 · 相对第一父提交 ${c.parents[0].slice(0, 7)}`
+                : c.parents.length
+                  ? `相对父提交 ${c.parents[0].slice(0, 7)}`
+                  : '首次提交 · 相对空目录'}
+            </p>
           </div>
-          <time>{new Date(c.date).toLocaleString('zh-CN')}</time>
+          <div className="commit-files" aria-label="提交变更文件">
+            <div className="commit-files-heading">
+              变更文件 <span>{details.files.length}</span>
+              <small>
+                +{details.files.reduce((n, f) => n + f.additions, 0)} / −
+                {details.files.reduce((n, f) => n + f.deletions, 0)}
+              </small>
+            </div>
+            {details.files.map((file) => (
+              <button
+                className={`commit-file ${path === file.path ? 'selected' : ''}`}
+                key={file.path}
+                aria-pressed={path === file.path}
+                onClick={() => setPath(file.path)}
+              >
+                <span className="file-status">{file.status[0]}</span>
+                <FileText size={14} />
+                <span title={file.path}>
+                  {file.oldPath ? `${file.oldPath} → ` : ''}
+                  {file.path}
+                </span>
+                <small>{file.binary ? '二进制' : `+${file.additions} −${file.deletions}`}</small>
+              </button>
+            ))}
+            {!details.files.length && <p className="comparison-note">这个提交没有文件变更。</p>}
+          </div>
         </div>
-        {(details.committer !== c.author ||
-          details.committerEmail !== c.authorEmail ||
-          details.committedAt !== c.date) && (
-          <p className="committer-note">
-            提交者：{details.committer} &lt;{details.committerEmail}&gt; ·{' '}
-            {new Date(details.committedAt).toLocaleString('zh-CN')}
-          </p>
+        {path ? (
+          renderDiff(
+            patch?.key === patchKey ? patch.value : null,
+            !patchError && patch?.key !== patchKey,
+            patchError,
+          )
+        ) : (
+          <div className="empty-state">这个提交没有可显示的文件差异。</div>
         )}
-        {details.body && (
-          <details className="commit-body">
-            <summary>提交说明</summary>
-            <p>{details.body}</p>
-          </details>
-        )}
-        <p className="comparison-note">
-          {c.parents.length > 1
-            ? `合并提交 · 相对第一父提交 ${c.parents[0].slice(0, 7)}`
-            : c.parents.length
-              ? `相对父提交 ${c.parents[0].slice(0, 7)}`
-              : '首次提交 · 相对空目录'}
-        </p>
-      </div>
-      <div className="commit-files" aria-label="提交变更文件">
-        <div className="commit-files-heading">
-          变更文件 <span>{details.files.length}</span>
-          <small>
-            +{details.files.reduce((n, f) => n + f.additions, 0)} / −
-            {details.files.reduce((n, f) => n + f.deletions, 0)}
-          </small>
-        </div>
-        {details.files.map((file) => (
-          <button
-            className={`commit-file ${path === file.path ? 'selected' : ''}`}
-            key={file.path}
-            aria-pressed={path === file.path}
-            onClick={() => setPath(file.path)}
-          >
-            <span className="file-status">{file.status[0]}</span>
-            <FileText size={14} />
-            <span title={file.path}>
-              {file.oldPath ? `${file.oldPath} → ` : ''}
-              {file.path}
-            </span>
-            <small>{file.binary ? '二进制' : `+${file.additions} −${file.deletions}`}</small>
-          </button>
-        ))}
-        {!details.files.length && <p className="comparison-note">这个提交没有文件变更。</p>}
-      </div>
-      {path &&
-        renderDiff(
-          patch?.key === patchKey ? patch.value : null,
-          !patchError && patch?.key !== patchKey,
-          patchError,
-        )}
+      </ResizableSplit>
     </section>
   );
 }

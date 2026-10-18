@@ -12,6 +12,15 @@ export interface Branch {
   subject: string;
 }
 
+export interface CloneProgress {
+  id: string;
+  state: string;
+  phase: string;
+  percent: number;
+  detail: string;
+  startedAt: string;
+}
+
 export interface Commit {
   hash: string;
   short: string;
@@ -30,6 +39,11 @@ export interface CommitDetails {
   committerEmail: string;
   committedAt: string;
   files: CommitFile[];
+}
+
+export interface CommitDraft {
+  title: string;
+  body: string;
 }
 
 export interface CommitFile {
@@ -66,17 +80,34 @@ export interface File {
   conflicted: boolean;
 }
 
+export interface HistoryPage {
+  commits: Commit[];
+  hasMore: boolean;
+  nextOffset: number;
+  revision: string;
+}
+
 export interface Hunk {
   id: number;
   line: number;
   header: string;
 }
 
-export interface Operation {
+export interface ManagedBranch {
+  name: string;
+  oid: string;
+  remote: boolean;
+  current: boolean;
+}
+
+export interface OperationStatus {
+  id: string;
   label: string;
+  state: string;
+  phase: string;
+  percent: number;
   detail: string;
-  time: string;
-  success: boolean;
+  startedAt: number;
 }
 
 export interface Preferences {
@@ -88,6 +119,11 @@ export interface Preferences {
 export interface Recent {
   name: string;
   path: string;
+}
+
+export interface RemoteBranches {
+  branches: string[];
+  defaultBranch: string;
 }
 
 export interface RemoteInfo {
@@ -116,15 +152,19 @@ export interface Snapshot {
   files: File[];
   branches: Branch[];
   commits: Commit[];
+  historyHasMore: boolean;
+  historyRevision: string;
   worktrees: Worktree[];
   remotes: string[];
-  operations: Operation[];
   stashes: Stash[];
 }
 
 export interface Startup {
   recents: Recent[];
   path: string;
+  session: WorkspaceSession;
+  ephemeral: boolean;
+  explicitPath: boolean;
 }
 
 export interface Stash {
@@ -132,6 +172,28 @@ export interface Stash {
   hash: string;
   subject: string;
   date: string;
+}
+
+export interface WorkflowInfo {
+  revision: string;
+  state: string;
+  head: string;
+  conflicts: File[];
+  branches: ManagedBranch[];
+  submodules: boolean;
+  lfs: boolean;
+}
+
+export interface WorkspaceSession {
+  root: string;
+  view: string;
+  kind: string;
+  path: string;
+  hash: string;
+  staged: boolean;
+  search: string;
+  drafts: Record<string, CommitDraft>;
+  updatedAt: number;
 }
 
 export interface Worktree {
@@ -150,6 +212,12 @@ export const Git = {
   branch(root: string, name: string, create: boolean): Promise<Result> {
     return call("Git.Branch", root, name, create);
   },
+  cancelClone(id: string): Promise<void> {
+    return call("Git.CancelClone", id);
+  },
+  cancelOperation(id: string): Promise<void> {
+    return call("Git.CancelOperation", id);
+  },
   changeToken(root: string): Promise<string> {
     return call("Git.ChangeToken", root);
   },
@@ -158,6 +226,12 @@ export const Git = {
   },
   chooseParent(): Promise<string> {
     return call("Git.ChooseParent");
+  },
+  cloneProgress(id: string): Promise<CloneProgress> {
+    return call("Git.CloneProgress", id);
+  },
+  cloneRepository(source: string, destination: string, branch: string, singleBranch: boolean, id: string): Promise<Snapshot> {
+    return call("Git.CloneRepository", source, destination, branch, singleBranch, id);
   },
   commit(root: string, message: string): Promise<Result> {
     return call("Git.Commit", root, message);
@@ -186,6 +260,12 @@ export const Git = {
   dropStash(root: string, hash: string, ref: string): Promise<Result> {
     return call("Git.DropStash", root, hash, ref);
   },
+  history(root: string, query: string, revision: string, offset: number): Promise<HistoryPage> {
+    return call("Git.History", root, query, revision, offset);
+  },
+  ignoreFile(root: string, path: string, revision: string): Promise<Result> {
+    return call("Git.IgnoreFile", root, path, revision);
+  },
   initializeExisting(path: string): Promise<Snapshot> {
     return call("Git.InitializeExisting", path);
   },
@@ -195,11 +275,20 @@ export const Git = {
   open(path: string): Promise<Snapshot> {
     return call("Git.Open", path);
   },
+  openDevelopmentPath(root: string, path: string, action: string, editor: string): Promise<void> {
+    return call("Git.OpenDevelopmentPath", root, path, action, editor);
+  },
+  operationStatus(): Promise<OperationStatus> {
+    return call("Git.OperationStatus");
+  },
   preferences(): Promise<Preferences> {
     return call("Git.Preferences");
   },
   publish(root: string, remote: string, branch: string): Promise<Result> {
     return call("Git.Publish", root, remote, branch);
+  },
+  remoteBranches(source: string): Promise<RemoteBranches> {
+    return call("Git.RemoteBranches", source);
   },
   remotes(root: string): Promise<RemoteInfo[]> {
     return call("Git.Remotes", root);
@@ -209,6 +298,9 @@ export const Git = {
   },
   savePreferences(p: Preferences): Promise<void> {
     return call("Git.SavePreferences", p);
+  },
+  saveSession(s: WorkspaceSession): Promise<void> {
+    return call("Git.SaveSession", s);
   },
   saveStash(root: string, message: string, untracked: boolean): Promise<Result> {
     return call("Git.SaveStash", root, message, untracked);
@@ -230,6 +322,15 @@ export const Git = {
   },
   sync(root: string, action: string, branch: string, remote: string, target: string): Promise<Result> {
     return call("Git.Sync", root, action, branch, remote, target);
+  },
+  textContextMenu(editable: boolean, selected: boolean): Promise<void> {
+    return call("Git.TextContextMenu", editable, selected);
+  },
+  workflow(root: string): Promise<WorkflowInfo> {
+    return call("Git.Workflow", root);
+  },
+  workflowAction(root: string, action: string, name: string, target: string, revision: string): Promise<Result> {
+    return call("Git.WorkflowAction", root, action, name, target, revision);
   },
 } as const;
 

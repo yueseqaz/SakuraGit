@@ -67,7 +67,7 @@ func (e *Engine) SaveStash(ctx context.Context, root, message string, untracked 
 			err = errors.New("Git 没有创建新的 Stash。子模块内部修改需要在子模块中单独保存")
 		}
 	}
-	e.record("保存工作现场", out, err)
+
 	return Result{Output: out}, err
 }
 
@@ -127,7 +127,7 @@ func (e *Engine) RestoreStash(ctx context.Context, root, hash string, restoreInd
 	}
 	args = append(args, hash)
 	out, err := e.runStash(ctx, args...)
-	e.record("恢复工作现场（保留记录）", out, err)
+
 	if err != nil {
 		return Result{}, errors.New("恢复未完整完成，可能已产生部分修改或冲突。原 Stash 保留，请检查工作区；不要直接重复恢复。\n" + err.Error())
 	}
@@ -148,6 +148,6 @@ func (e *Engine) DropStash(ctx context.Context, root, hash, ref string) (Result,
 		return Result{}, err
 	}
 	out, err := e.runStash(ctx, "drop", item.Ref)
-	e.record("删除工作现场", item.Subject+"\n"+out, err)
+
 	return Result{Output: out}, err
 }

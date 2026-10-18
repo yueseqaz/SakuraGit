@@ -1,7 +1,7 @@
 {
-  "name": "Gitlane",
+  "name": "SakuraGit",
   "identifier": "dev.gitlane.desktop",
-  "version": "0.3.1",
+  "version": "0.5.2",
   "devUrl": "http://127.0.0.1:5274",
   "devCommand": "npm run dev:web",
   "buildCommand": "npm run build:web",

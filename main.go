@@ -11,7 +11,7 @@ import (
 	"sync/atomic"
 
 	"github.com/egoist/mygo"
-	"gitlane/internal/gitrepo"
+	"github.com/yueseqaz/SakuraGit/internal/gitrepo"
 )
 
 type Recent struct {
@@ -20,25 +20,34 @@ type Recent struct {
 }
 
 type Startup struct {
-	Recents []Recent `json:"recents"`
-	Path    string   `json:"path"`
+	Recents      []Recent         `json:"recents"`
+	Path         string           `json:"path"`
+	Session      WorkspaceSession `json:"session"`
+	Ephemeral    bool             `json:"ephemeral"`
+	ExplicitPath bool             `json:"explicitPath"`
 }
 
 // Git exposes only repository-scoped operations, never arbitrary shell commands.
 type Git struct {
-	engine      gitrepo.Engine
-	mu          sync.Mutex
-	recents     []Recent
-	settings    string
-	startupPath string
-	ephemeral   bool
+	engine       gitrepo.Engine
+	mu           sync.Mutex
+	recents      []Recent
+	settings     string
+	startupPath  string
+	ephemeral    bool
+	sessionMu    sync.Mutex
+	sessionFile  string
+	operationMu  sync.Mutex
+	operation    *operationJob
+	exitPrompt   bool
+	exitApproved bool
 }
 
 func (g *Git) Bootstrap() (Startup, error) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	if g.ephemeral {
-		return Startup{Recents: []Recent{}, Path: g.startupPath}, nil
+		return Startup{Recents: []Recent{}, Path: g.startupPath, Session: emptySession(), Ephemeral: true}, nil
 	}
 	if g.settings == "" {
 		dir, err := mygo.App.Path(mygo.PathUserData)
@@ -56,7 +65,15 @@ func (g *Git) Bootstrap() (Startup, error) {
 			return Startup{}, err
 		}
 	}
-	return Startup{Recents: append([]Recent{}, g.recents...), Path: g.startupPath}, nil
+	session := emptySession()
+	if path, err := g.sessionStoragePath(); err == nil {
+		session = readSession(path)
+	}
+	path := g.startupPath
+	if path == "" {
+		path = session.Root
+	}
+	return Startup{Recents: append([]Recent{}, g.recents...), Path: path, Session: session, ExplicitPath: g.startupPath != ""}, nil
 }
 
 func (g *Git) Open(ctx context.Context, path string) (gitrepo.Snapshot, error) {
@@ -123,36 +140,65 @@ func (g *Git) CommitFileDiff(ctx context.Context, root, hash, path string) (gitr
 }
 
 func (g *Git) Publish(ctx context.Context, root, remote, branch string) (gitrepo.Result, error) {
-	return g.engine.Publish(ctx, root, remote, branch)
+	return withOperation(g, ctx, "publish", true, func(ctx context.Context) (gitrepo.Result, error) {
+		return g.engine.Publish(ctx, root, remote, branch)
+
+	})
 }
 
 func (g *Git) Stage(ctx context.Context, root string, paths []string, staged bool) (gitrepo.Result, error) {
-	return g.engine.Stage(ctx, root, paths, staged)
+	return withOperation(g, ctx, "stage", false, func(ctx context.Context) (gitrepo.Result, error) {
+		return g.engine.Stage(ctx, root, paths, staged)
+
+	})
 }
 
 func (g *Git) Commit(ctx context.Context, root, message string) (gitrepo.Result, error) {
-	return g.engine.Commit(ctx, root, message)
+	return withOperation(g, ctx, "commit", false, func(ctx context.Context) (gitrepo.Result, error) {
+		return g.engine.Commit(ctx, root, message)
+
+	})
 }
 
 func (g *Git) Branch(ctx context.Context, root, name string, create bool) (gitrepo.Result, error) {
-	return g.engine.Branch(ctx, root, name, create)
+	return withOperation(g, ctx, "branch", false, func(ctx context.Context) (gitrepo.Result, error) {
+		return g.engine.Branch(ctx, root, name, create)
+
+	})
 }
 
 func (g *Git) Sync(ctx context.Context, root, action, branch, remote, target string) (gitrepo.Result, error) {
-	return g.engine.SyncConfirmed(ctx, root, action, branch, remote, target)
+	return withOperation(g, ctx, "sync", true, func(ctx context.Context) (gitrepo.Result, error) {
+		return g.engine.SyncConfirmed(ctx, root, action, branch, remote, target)
+
+	})
 }
 
 func main() {
 	repo := flag.String("repo", "", "Open this repository on launch")
-	smoke := flag.Bool("smoke", false, "Read-only native webview/IPC smoke test; requires --repo")
+	smoke := flag.Bool("smoke", false, "Isolated-fixture native webview/IPC smoke test; requires --repo")
 	autoFile := flag.String("smoke-auto-file", "", "In smoke mode, wait for this externally-created file to appear via automatic refresh")
 	flag.Parse()
 	if *smoke && *repo == "" {
 		log.Fatal("--smoke requires --repo")
 	}
-	mygo.App.SetName("Gitlane")
-	mygo.App.SetVersion("0.3.1")
-	mygo.Bind(&Git{startupPath: *repo, ephemeral: *smoke})
+	mygo.App.SetName("SakuraGit")
+	mygo.App.SetVersion("0.5.2")
+	// Keep the pre-rename data location so existing sessions and drafts survive.
+	if dir, err := mygo.App.Path(mygo.PathAppData); err == nil {
+		mygo.App.SetPath(mygo.PathUserData, filepath.Join(dir, "Gitlane"))
+	} else {
+		log.Fatalf("Cannot locate application data: %v", err)
+	}
+	service := &Git{startupPath: *repo, ephemeral: *smoke}
+	mygo.Bind(service)
+	if !*smoke {
+		mygo.App.OnBeforeQuit(func(e *mygo.QuitEvent) {
+			if service.protectExit(mygo.FocusedWindow(), true) {
+				e.PreventDefault()
+			}
+		})
+	}
 	var smokeOK atomic.Bool
 	mygo.App.WhenReady(func() {
 		prefs := defaultPreferences()
@@ -160,17 +206,7 @@ func main() {
 			prefs = loadPreferences()
 		}
 		mygo.Theme.SetSource(mygo.ThemeSource(prefs.Appearance))
-		mygo.App.SetMenu(mygo.NewMenu([]*mygo.MenuItem{
-			{Role: mygo.RoleAppMenu, Submenu: []*mygo.MenuItem{
-				{Role: mygo.RoleAbout}, mygo.Separator(),
-				{Label: "设置…", Accelerator: "CmdOrCtrl+,", Click: func(_ *mygo.MenuItem, win *mygo.Window) { _ = settingsRequested.Emit(win, true) }},
-				mygo.Separator(), {Role: mygo.RoleServices},
-				mygo.Separator(), {Role: mygo.RoleHide}, {Role: mygo.RoleHideOthers}, {Role: mygo.RoleUnhide},
-				mygo.Separator(), {Role: mygo.RoleQuit},
-			}},
-			{Role: mygo.RoleFileMenu},
-			{Role: mygo.RoleEditMenu}, {Role: mygo.RoleViewMenu}, {Role: mygo.RoleWindowMenu},
-		}))
+		mygo.App.SetMenu(mygo.NewMenu(applicationMenu()))
 		background := "#f3f6f8"
 		if mygo.Theme.IsDark() {
 			background = "#17212a"
@@ -180,9 +216,17 @@ func main() {
 			stateKey = ""
 		}
 		win := mygo.NewWindow(mygo.WindowOptions{
-			Title: "Gitlane", URL: "/", Width: 1440, Height: 920, MinWidth: 900, MinHeight: 620,
+			Title: "SakuraGit", URL: "/", Width: 1440, Height: 920, MinWidth: 900, MinHeight: 620,
 			TitleBarStyle: mygo.TitleBarHiddenInset, TitleBarHeight: 48, BackgroundColor: background, StateKey: stateKey,
+			Page: mygo.PageOptions{PreloadScript: desktopGuard},
 		})
+		if !*smoke {
+			win.OnClose(func(e *mygo.CloseEvent) {
+				if service.protectExit(win, false) {
+					e.PreventDefault()
+				}
+			})
+		}
 		if *smoke {
 			startSmoke(win, &smokeOK, *autoFile)
 		}

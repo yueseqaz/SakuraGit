@@ -37,6 +37,18 @@ type CommitFile struct {
 	Binary    bool   `json:"binary"`
 }
 
+type HistoryPage struct {
+	Commits    []Commit `json:"commits"`
+	HasMore    bool     `json:"hasMore"`
+	NextOffset int      `json:"nextOffset"`
+	Revision   string   `json:"revision"`
+}
+
+type RemoteBranches struct {
+	Branches      []string `json:"branches"`
+	DefaultBranch string   `json:"defaultBranch"`
+}
+
 type CommitDetails struct {
 	Commit         Commit       `json:"commit"`
 	Body           string       `json:"body"`
@@ -52,32 +64,27 @@ type Worktree struct {
 	Detached bool   `json:"detached"`
 }
 
-type Operation struct {
-	Label   string `json:"label"`
-	Detail  string `json:"detail"`
-	Time    string `json:"time"`
-	Success bool   `json:"success"`
-}
-
 type Snapshot struct {
-	Root           string      `json:"root"`
-	Name           string      `json:"name"`
-	Branch         string      `json:"branch"`
-	Upstream       string      `json:"upstream"`
-	UpstreamRemote string      `json:"upstreamRemote"`
-	UpstreamBranch string      `json:"upstreamBranch"`
-	Ahead          int         `json:"ahead"`
-	Behind         int         `json:"behind"`
-	Unborn         bool        `json:"unborn"`
-	Detached       bool        `json:"detached"`
-	State          string      `json:"state"`
-	Files          []File      `json:"files"`
-	Branches       []Branch    `json:"branches"`
-	Commits        []Commit    `json:"commits"`
-	Worktrees      []Worktree  `json:"worktrees"`
-	Remotes        []string    `json:"remotes"`
-	Operations     []Operation `json:"operations"`
-	Stashes        []Stash     `json:"stashes"`
+	Root            string     `json:"root"`
+	Name            string     `json:"name"`
+	Branch          string     `json:"branch"`
+	Upstream        string     `json:"upstream"`
+	UpstreamRemote  string     `json:"upstreamRemote"`
+	UpstreamBranch  string     `json:"upstreamBranch"`
+	Ahead           int        `json:"ahead"`
+	Behind          int        `json:"behind"`
+	Unborn          bool       `json:"unborn"`
+	Detached        bool       `json:"detached"`
+	State           string     `json:"state"`
+	Files           []File     `json:"files"`
+	Branches        []Branch   `json:"branches"`
+	Commits         []Commit   `json:"commits"`
+	HistoryHasMore  bool       `json:"historyHasMore"`
+	HistoryRevision string     `json:"historyRevision"`
+	Worktrees       []Worktree `json:"worktrees"`
+	Remotes         []string   `json:"remotes"`
+
+	Stashes []Stash `json:"stashes"`
 }
 
 type Diff struct {

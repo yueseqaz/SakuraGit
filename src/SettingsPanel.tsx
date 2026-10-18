@@ -88,7 +88,7 @@ export function SettingsPanel({
       </div>
       <div className="settings-footnote">
         {saving ? '正在保存…' : '自动保存 · 下次启动继续使用'}
-        <span>Gitlane 0.3.1 / MyGo</span>
+        <span>SakuraGit 0.5.2 / MyGo</span>
       </div>
     </div>
   );

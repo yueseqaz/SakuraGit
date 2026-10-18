@@ -23,6 +23,8 @@ export const demoSnapshot: Snapshot = {
   unborn: false,
   detached: false,
   state: '',
+  historyHasMore: false,
+  historyRevision: 'preview',
   files: [
     {
       path: 'src/components/CommandMenu.tsx',
@@ -133,14 +135,6 @@ export const demoSnapshot: Snapshot = {
       hash: h(22),
       subject: 'On main: 临时保存导航调整',
       date: '2026-10-17T18:20:00+08:00',
-    },
-  ],
-  operations: [
-    {
-      label: '浏览器只读预览',
-      detail: '此页面使用示例数据。请启动 MyGo 桌面应用以操作真实仓库。',
-      success: true,
-      time: new Date().toISOString(),
     },
   ],
 };

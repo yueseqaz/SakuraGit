@@ -83,10 +83,6 @@ func (e *Engine) StageHunk(ctx context.Context, root, path string, staged bool, 
 		return Result{}, fmt.Errorf("代码块无法应用，索引可能已变化，请刷新: %w", err)
 	}
 	out, err := runInput(ctx, e.root, patch, args...)
-	label := "暂存代码块"
-	if staged {
-		label = "取消暂存代码块"
-	}
-	e.record(label, path+"\n"+out, err)
+
 	return Result{Output: out}, err
 }

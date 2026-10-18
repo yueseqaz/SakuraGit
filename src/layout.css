@@ -1,0 +1,132 @@
+/* Thin, keyboard-accessible split handles keep the existing mist-blue surfaces. */
+.resizable-split {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+}
+.split-handle {
+  position: absolute;
+  z-index: 8;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.split-handle.horizontal {
+  top: 0;
+  bottom: 0;
+  left: var(--split-first);
+  width: 9px;
+  transform: translateX(-50%);
+  cursor: col-resize;
+}
+.split-handle.vertical {
+  left: 0;
+  right: 0;
+  top: var(--split-first);
+  height: 9px;
+  transform: translateY(-50%);
+  cursor: row-resize;
+}
+.split-handle::after {
+  content: '';
+  position: absolute;
+  background: var(--line);
+  transition: background 0.15s;
+}
+.split-handle.horizontal::after {
+  width: 2px;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+}
+.split-handle.vertical::after {
+  height: 2px;
+  left: 0;
+  right: 0;
+  top: 3px;
+}
+.split-handle:hover::after,
+.split-handle:focus-visible::after,
+.split-handle.dragging::after {
+  background: var(--green);
+}
+.split-handle:focus-visible {
+  outline: 1px solid var(--green);
+  outline-offset: -1px;
+}
+.resizing-columns,
+.resizing-columns * {
+  cursor: col-resize !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+.resizing-rows,
+.resizing-rows * {
+  cursor: row-resize !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+.history-auto-hint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+@media (min-width: 761px) {
+  .app-shell.has-resizable-sidebar {
+    position: relative;
+    grid-template-columns: minmax(0, var(--split-first)) minmax(0, 1fr);
+  }
+  .app-shell > .sidebar-handle {
+    top: 48px;
+    bottom: 30px;
+  }
+  .resizable-split.split-horizontal {
+    display: grid;
+    grid-template-columns: minmax(0, var(--split-first)) minmax(0, 1fr);
+  }
+  .resizable-split.split-vertical {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, var(--split-first)) minmax(0, 1fr);
+  }
+  .changes-body,
+  .commit-details-body {
+    flex: 1;
+    overflow: hidden;
+  }
+  .changes-body > .file-groups {
+    min-height: 0;
+  }
+  .changes-body > .commit-form {
+    overflow: auto;
+  }
+  .commit-details {
+    overflow: hidden;
+  }
+  .commit-overview {
+    min-height: 0;
+    overflow: auto;
+  }
+  .commit-overview > .commit-files {
+    max-height: none;
+  }
+  .commit-details-body > .diff-panel {
+    min-height: 0;
+    border-radius: 0;
+  }
+}
+@media (max-width: 760px) {
+  .split-handle {
+    display: none;
+  }
+  .changes-body,
+  .commit-details-body {
+    display: flex;
+    flex-direction: column;
+  }
+  .commit-details-body > .diff-panel {
+    min-height: 320px;
+  }
+}

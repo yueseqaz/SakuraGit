@@ -41,8 +41,39 @@ func validateRemoteURL(value string) error {
 
 // New repositories must have a new destination; no existing directory is overwritten.
 func (e *Engine) CreateRepository(ctx context.Context, source, destination string, initialize bool) (string, error) {
-	e.mu.Lock()
-	defer e.mu.Unlock()
+	return e.CreateRepositoryWithBranch(ctx, source, destination, initialize, "", false)
+}
+
+func (e *Engine) RemoteBranches(ctx context.Context, source string) (RemoteBranches, error) {
+	result := RemoteBranches{Branches: []string{}}
+	if err := validateRemoteURL(source); err != nil {
+		return result, err
+	}
+	raw, err := run(ctx, "", "-c", "protocol.ext.allow=never", "ls-remote", "--symref", "--", source, "HEAD", "refs/heads/*")
+	if err != nil {
+		return result, err
+	}
+	for _, line := range strings.Split(raw, "\n") {
+		fields := strings.SplitN(line, "\t", 2)
+		if len(fields) != 2 {
+			continue
+		}
+		if fields[1] == "HEAD" && strings.HasPrefix(fields[0], "ref: refs/heads/") {
+			result.DefaultBranch = strings.TrimPrefix(fields[0], "ref: refs/heads/")
+		} else if strings.HasPrefix(fields[1], "refs/heads/") {
+			result.Branches = append(result.Branches, strings.TrimPrefix(fields[1], "refs/heads/"))
+		}
+	}
+	return result, nil
+}
+
+func (e *Engine) CreateRepositoryWithBranch(ctx context.Context, source, destination string, initialize bool, branch string, singleBranch bool) (string, error) {
+	return e.createRepository(ctx, source, destination, initialize, branch, singleBranch, nil)
+}
+
+func (e *Engine) createRepository(ctx context.Context, source, destination string, initialize bool, branch string, singleBranch bool, progress func(string)) (string, error) {
+	// Creation does not access the open repository. Destination ownership is
+	// protected by atomic Mkdir, without blocking commands on the open repository.
 	if !filepath.IsAbs(destination) {
 		return "", errors.New("目标文件夹必须使用绝对路径")
 	}
@@ -51,21 +82,51 @@ func (e *Engine) CreateRepository(ctx context.Context, source, destination strin
 		if err := validateRemoteURL(source); err != nil {
 			return "", err
 		}
+		if branch != "" {
+			if strings.HasPrefix(branch, "-") || strings.ContainsAny(branch, "\r\n\x00") {
+				return "", errors.New("无效的克隆分支")
+			}
+			if _, err := run(ctx, "", "check-ref-format", "refs/heads/"+branch); err != nil {
+				return "", errors.New("无效的克隆分支")
+			}
+		}
 	}
 	parent, err := filepath.EvalSymlinks(filepath.Dir(destination))
 	if err != nil {
 		return "", errors.New("请先选择已存在的父文件夹")
 	}
 	destination = filepath.Join(parent, filepath.Base(destination))
+	if err := ctx.Err(); err != nil {
+		return "", err
+	}
 	if err := os.Mkdir(destination, 0755); err != nil {
 		return "", fmt.Errorf("目标必须是尚不存在的新文件夹，不会覆盖原有内容: %w", err)
 	}
 	args := []string{"init", "--initial-branch=main", "--", destination}
 	if !initialize {
-		args = []string{"-c", "protocol.ext.allow=never", "clone", "--no-recurse-submodules", "--", source, destination}
+		args = []string{"-c", "protocol.ext.allow=never", "clone", "--progress", "--no-recurse-submodules"}
+		if branch != "" {
+			args = append(args, "--branch", branch)
+		}
+		if singleBranch {
+			args = append(args, "--single-branch")
+		}
+		args = append(args, "--", source, destination)
 	}
-	if _, err := run(ctx, "", args...); err != nil {
+	var commandErr error
+	if initialize {
+		_, commandErr = run(ctx, "", args...)
+	} else {
+		commandErr = runClone(ctx, args, progress)
+	}
+	if err := commandErr; err != nil {
 		return "", fmt.Errorf("操作未完整完成，目标目录已保留供检查（%s），不会自动删除其中内容: %w", destination, err)
+	}
+	if !initialize && branch != "" {
+		head, err := run(ctx, destination, "symbolic-ref", "HEAD")
+		if err != nil || strings.TrimSpace(head) != "refs/heads/"+branch {
+			return "", fmt.Errorf("远程分支已变化或同名引用是标签，未打开仓库；目标目录已保留供检查（%s）", destination)
+		}
 	}
 	return destination, nil
 }
@@ -177,7 +238,7 @@ func (e *Engine) ManageRemote(ctx context.Context, root, action, name, address, 
 		return Result{}, errors.New("不支持的远程操作")
 	}
 	out, err := run(ctx, e.root, args...)
-	e.record("远程配置 "+action+" "+name, out, err)
+
 	return Result{Output: out}, err
 }
 
@@ -211,7 +272,7 @@ func (e *Engine) SetIdentity(ctx context.Context, root, name, email string) (Res
 		return Result{}, err
 	}
 	out, err := run(ctx, e.root, "config", "--local", "--", "user.email", email)
-	e.record("设置本仓库提交身份", out, err)
+
 	return Result{Output: out}, err
 }
 
@@ -222,6 +283,9 @@ func (e *Engine) ChangeToken(ctx context.Context, root string) (string, error) {
 	if err := e.checkRoot(root); err != nil {
 		return "", err
 	}
+	return e.changeToken(ctx)
+}
+func (e *Engine) changeToken(ctx context.Context) (string, error) {
 	raw, err := run(ctx, e.root, "status", "--porcelain=v2", "-z", "--branch", "--untracked-files=all")
 	if err != nil {
 		return "", err

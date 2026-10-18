@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { isMyGo } from 'mygo-runtime';
 import {
   Archive,
@@ -13,7 +13,6 @@ import {
   ChevronDown,
   ChevronRight,
   CircleHelp,
-  Clock3,
   FileCode2,
   FileText,
   FolderGit2,
@@ -39,13 +38,12 @@ import {
   events,
   Git,
   type Preferences,
-  type Commit,
   type Diff,
   type File,
   type Recent,
   type Snapshot,
 } from './mygo';
-import { buildGraph, fileStatus, isStaged, isUnstaged } from './git-view';
+import { fileStatus, isStaged, isUnstaged } from './git-view';
 import { demoDiff, demoSnapshot } from './demo';
 import { applyPreferences, cachedPreferences } from './appearance';
 import { SettingsPanel } from './SettingsPanel';
@@ -57,9 +55,18 @@ import { Dialog } from './Dialog';
 import { NewRepositoryDialog } from './NewRepositoryDialog';
 import { StashPanel } from './StashPanel';
 import { RemotePanel } from './RemotePanel';
+import { useHistory } from './useHistory';
+import { HistoryPanel } from './HistoryPanel';
+import { ResizableSplit, useSplitLayout } from './ResizableSplit';
+import { useVirtualRows } from './useVirtualRows';
+import { WorkflowPanel } from './WorkflowPanel';
+import { cacheSession, emptySession, restoreStartup, readSessionCache } from './session';
+import type { WorkspaceSession } from './mygo';
+import { OperationBar } from './OperationBar';
+import { ErrorDetails, describeGitError } from './ErrorDetails';
 
 const native = isMyGo();
-type View = 'changes' | 'history' | 'worktrees' | 'activity' | 'stashes' | 'remotes';
+type View = 'changes' | 'history' | 'worktrees' | 'stashes' | 'remotes' | 'workflow';
 type Modal =
   | { kind: 'open' }
   | { kind: 'branch' }
@@ -72,20 +79,13 @@ const viewNames: Record<View, string> = {
   changes: '工作区',
   history: '提交历史',
   worktrees: '工作树',
-  activity: '操作记录',
   stashes: '工作现场',
   remotes: '仓库连接',
+  workflow: '开发工具',
 };
-const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
+const messageOf = (error: unknown) => describeGitError(error).raw;
 const basename = (path: string) => path.split('/').at(-1) || path;
 const dirname = (path: string) => (path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '');
-const formatDate = (date: string) =>
-  new Intl.DateTimeFormat('zh-CN', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(date));
 
 function Mark({ small = false }: { small?: boolean }) {
   return (
@@ -106,6 +106,13 @@ function Mark({ small = false }: { small?: boolean }) {
 }
 
 export default function App() {
+  const sidebarLayout = useSplitLayout({
+    name: 'sidebar',
+    label: '调整导航栏宽度',
+    initial: 0.16,
+    minFirst: 190,
+    minSecond: 640,
+  });
   const [snapshot, setSnapshot] = useState<Snapshot | null>(native ? null : demoSnapshot);
   const [recents, setRecents] = useState<Recent[]>([]);
   const [view, setView] = useState<View>('changes');
@@ -172,7 +179,23 @@ export default function App() {
     }
   };
   const [search, setSearch] = useState('');
+  const history = useHistory(snapshot, view === 'history' ? search : '', native);
+  useEffect(() => {
+    if (view !== 'history' || history.loading) return;
+    setSelection((current) =>
+      current?.kind === 'commit' && history.commits.some((c) => c.hash === current.hash)
+        ? current
+        : history.commits[0]
+          ? { kind: 'commit', hash: history.commits[0].hash }
+          : null,
+    );
+  }, [view, history.commits, history.loading]);
   const [drafts, setDrafts] = useState<Record<string, { title: string; body: string }>>({});
+  const [hydrated, setHydrated] = useState(!native);
+  const sessionEnabled = useRef(native);
+  const sessionLatest = useRef<WorkspaceSession>(emptySession());
+  const sessionQueue = useRef(Promise.resolve());
+  const [sessionError, setSessionError] = useState('');
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [diffVersion, setDiffVersion] = useState(0);
   const busyRef = useRef(false);
@@ -181,6 +204,36 @@ export default function App() {
   const searchRef = useRef<HTMLInputElement>(null);
   const snapshotRef = useRef(snapshot);
   snapshotRef.current = snapshot;
+
+  useEffect(() => {
+    if (!native || !hydrated || !sessionEnabled.current) return;
+    const value: WorkspaceSession = {
+      root: snapshot?.root || sessionLatest.current.root,
+      view,
+      kind: selection?.kind || '',
+      path: selection?.kind === 'file' ? selection.path : '',
+      hash: selection?.kind === 'commit' || selection?.kind === 'stash' ? selection.hash : '',
+      staged: selection?.kind === 'file' && selection.staged,
+      search,
+      drafts,
+      updatedAt: Math.max(Date.now(), sessionLatest.current.updatedAt + 1),
+    };
+    sessionLatest.current = value;
+    const cached = cacheSession(value);
+    const timer = setTimeout(() => {
+      sessionQueue.current = sessionQueue.current
+        .catch(() => {})
+        .then(() => Git.saveSession(value))
+        .then(
+          () => setSessionError(cached ? '' : '浏览器缓存不可用；草稿已保存到本机文件。'),
+          (e) =>
+            setSessionError(
+              `会话保存异常：${messageOf(e)}${cached ? '；本地缓存仍保留。' : '；请暂时不要关闭窗口。'}`,
+            ),
+        );
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [hydrated, snapshot?.root, view, selection, search, drafts]);
 
   const applySnapshot = (next: Snapshot, reset = false) => {
     rootRef.current = next.root;
@@ -224,6 +277,7 @@ export default function App() {
           ].slice(0, 8),
         );
         setModal(null);
+        return next;
       }
     } catch (error) {
       setNotice({ kind: 'error', text: messageOf(error) });
@@ -238,6 +292,9 @@ export default function App() {
     target: string,
     initialize: boolean,
     existing = false,
+    branch = '',
+    singleBranch = false,
+    cloneID = '',
   ) => {
     if (!native) {
       setShowNewRepository(false);
@@ -252,7 +309,9 @@ export default function App() {
     try {
       const next = existing
         ? await Git.initializeExisting(target)
-        : await Git.createRepository(source, target, initialize);
+        : initialize
+          ? await Git.createRepository(source, target, true)
+          : await Git.cloneRepository(source, target, branch, singleBranch, cloneID);
       applySnapshot(next, true);
       setRecents((items) =>
         [{ name: next.name, path: next.root }, ...items.filter((i) => i.path !== next.root)].slice(
@@ -266,7 +325,7 @@ export default function App() {
         text: initialize ? '仓库已创建，可以开始第一次提交。' : '克隆完成，已打开新仓库。',
       });
     } catch (error) {
-      setNotice({ kind: 'error', text: messageOf(error) });
+      throw new Error(messageOf(error));
     } finally {
       busyRef.current = false;
       setBusy('');
@@ -346,11 +405,36 @@ export default function App() {
           const startup = await Git.bootstrap();
           if (!active) return;
           setRecents(startup.recents);
-          if (startup.path) await loadRepo(startup.path);
+          sessionEnabled.current = !startup.ephemeral;
+          const { saved, path } = restoreStartup(
+            startup,
+            startup.ephemeral ? emptySession() : readSessionCache(),
+          );
+          sessionLatest.current = saved;
+          setDrafts(saved.drafts);
+          if (path) {
+            const next = await loadRepo(path);
+            if (next && next.root === saved.root) {
+              setView(saved.view as View);
+              setSearch(saved.search);
+              if (
+                saved.kind === 'file' &&
+                next.files.some(
+                  (f) => f.path === saved.path && (saved.staged ? isStaged(f) : isUnstaged(f)),
+                )
+              )
+                setSelection({ kind: 'file', path: saved.path, staged: saved.staged });
+              if (saved.kind === 'commit' && saved.hash) {
+                setSelection({ kind: 'commit', hash: saved.hash });
+                if (!next.commits.some((c) => c.hash === saved.hash)) setSearch(saved.hash);
+              }
+            }
+          }
         } catch (error) {
           if (active) setNotice({ kind: 'error', text: messageOf(error) });
         }
       }
+      if (active) setHydrated(true);
       document.documentElement.dataset.ready = 'true';
     };
     void start();
@@ -444,6 +528,8 @@ export default function App() {
     let active = true;
     let running = false;
     let previous = '';
+    let delay = 3000;
+    let timer: ReturnType<typeof setTimeout>;
     const check = async () => {
       if (!active || running || busyRef.current || document.visibilityState !== 'visible') return;
       running = true;
@@ -458,6 +544,7 @@ export default function App() {
         )
           return;
         if (token !== previous) {
+          delay = 3000;
           const next = await Git.snapshot(root);
           if (
             !active ||
@@ -468,7 +555,7 @@ export default function App() {
             return;
           applySnapshot(next);
           previous = token;
-        }
+        } else delay = Math.min(15000, delay + 3000);
         setAutoRefreshError('');
       } catch (e) {
         if (active) setAutoRefreshError(messageOf(e));
@@ -476,14 +563,23 @@ export default function App() {
         running = false;
       }
     };
-    const timer = setInterval(() => void check(), 3000);
+    const schedule = () => {
+      timer = setTimeout(async () => {
+        await check();
+        if (active) schedule();
+      }, delay);
+    };
+    schedule();
     const visible = () => {
-      if (document.visibilityState === 'visible') void check();
+      if (document.visibilityState === 'visible') {
+        delay = 3000;
+        void check();
+      }
     };
     document.addEventListener('visibilitychange', visible);
     return () => {
       active = false;
-      clearInterval(timer);
+      clearTimeout(timer);
       document.removeEventListener('visibilitychange', visible);
     };
   }, [snapshot?.root]);
@@ -509,8 +605,30 @@ export default function App() {
   const staged = snapshot?.files.filter(isStaged) || [];
   const conflicts = snapshot?.files.some((file) => file.conflicted);
   const draft = drafts[snapshot?.root || ''] || { title: '', body: '' };
+  const saveDrafts = (next: typeof drafts) => {
+    if (native && sessionEnabled.current) {
+      const saved = {
+        ...sessionLatest.current,
+        drafts: next,
+        updatedAt: Math.max(Date.now(), sessionLatest.current.updatedAt + 1),
+      };
+      sessionLatest.current = saved;
+      if (!cacheSession(saved))
+        setSessionError('即时缓存不可用，正在写入本机草稿文件；请稍候再退出。');
+    }
+    setDrafts(next);
+  };
   const setDraft = (part: Partial<typeof draft>) => {
-    if (snapshot) setDrafts((old) => ({ ...old, [snapshot.root]: { ...draft, ...part } }));
+    if (snapshot) {
+      const next = { ...drafts, [snapshot.root]: { ...draft, ...part } };
+      for (const root of Object.keys(next))
+        if (!next[root].title && !next[root].body) delete next[root];
+      if (Object.keys(next).length > 64) {
+        setSessionError('已保存 64 个仓库的非空草稿；请先在旧仓库清空或提交草稿，不会自动丢弃。');
+        return;
+      }
+      saveDrafts(next);
+    }
   };
   const stageFiles = (files: File[], stage: boolean) =>
     void mutate(
@@ -542,7 +660,11 @@ export default function App() {
       '创建提交',
       (root) => Git.commit(root, message),
       '提交成功。仅已暂存的修改包含在此次提交中。',
-      () => setDrafts((items) => ({ ...items, [root]: { title: '', body: '' } })),
+      () => {
+        const next = { ...sessionLatest.current.drafts, ...drafts };
+        delete next[root];
+        saveDrafts(next);
+      },
     );
   };
 
@@ -586,10 +708,15 @@ export default function App() {
   };
 
   return (
-    <div className="app-shell" data-repo-root={snapshot?.root || ''}>
+    <div
+      className="app-shell has-resizable-sidebar"
+      ref={sidebarLayout.ref}
+      style={sidebarLayout.style}
+      data-repo-root={snapshot?.root || ''}
+    >
       <header className="titlebar">
         <div className="titlebar-label">
-          <Mark small /> <span>Gitlane</span>
+          <Mark small /> <span>SakuraGit</span>
           <span className="titlebar-divider" />{' '}
           <span className="titlebar-caption">A clearer path for your code.</span>
         </div>
@@ -665,10 +792,10 @@ export default function App() {
             count={snapshot?.worktrees.length || 0}
           />
           <NavButton
-            active={view === 'activity'}
-            onClick={() => changeView('activity')}
-            icon={<Clock3 />}
-            label="操作记录"
+            active={view === 'workflow'}
+            onClick={() => changeView('workflow')}
+            icon={<Terminal />}
+            label="开发工具"
           />
         </nav>
         <div className="sidebar-scroll">
@@ -737,19 +864,20 @@ export default function App() {
             <CircleHelp size={16} /> 使用指南 <ArrowUpRight size={14} />
           </button>
           <div className="sidebar-version">
-            <span>Gitlane</span>
+            <span>SakuraGit</span>
             <span>
-              v0.3.1 <span className="tiny-dot" /> MyGo
+              v0.5.2 <span className="tiny-dot" /> MyGo
             </span>
           </div>
         </div>
       </aside>
 
+      {sidebarLayout.separator}
       <main className="main-content">
         <div className="workspace-topbar">
           <div className="breadcrumb">
             <FolderGit2 size={16} />
-            <span>{snapshot?.name || 'Gitlane'}</span>
+            <span>{snapshot?.name || 'SakuraGit'}</span>
             <ChevronRight size={13} />
             <strong>{viewNames[view]}</strong>
           </div>
@@ -877,15 +1005,25 @@ export default function App() {
                 <ShieldCheck size={17} />
                 <span>
                   {conflicts
-                    ? '存在冲突：请使用编辑器解决冲突；此版本不提供冲突编辑器。'
+                    ? '存在冲突：可在开发工具中定位文件、调用外部合并工具并标记解决。'
                     : snapshot.detached
                       ? '当前处于 Detached HEAD。请切换或创建分支后提交。'
-                      : `正在进行 ${snapshot.state}，请在终端完成或退出后刷新。`}
+                      : `正在进行 ${snapshot.state}，可在开发工具中继续或中止受支持的流程。`}
                 </span>
+                <button className="button compact" onClick={() => changeView('workflow')}>
+                  打开开发工具
+                </button>
               </div>
             )}
             {view === 'changes' && (
-              <div className="workbench">
+              <ResizableSplit
+                className="workbench"
+                name="workspace"
+                label="调整文件列表与差异宽度"
+                initial={0.34}
+                minFirst={220}
+                minSecond={300}
+              >
                 <section className="changes-panel" aria-label="文件与提交">
                   <div className="panel-title">
                     <span>
@@ -893,96 +1031,106 @@ export default function App() {
                     </span>
                     <span className="mono-label">CHANGES</span>
                   </div>
-                  <div className="file-groups">
-                    <FileGroup
-                      title="未暂存的更改"
-                      files={unstaged}
-                      staged={false}
-                      search={search}
-                      selection={selection}
-                      onSelect={setSelection}
-                      onStage={stageFiles}
-                      disabled={!!busy}
-                    />
-                    <FileGroup
-                      title="已暂存的更改"
-                      files={staged}
-                      staged
-                      search={search}
-                      selection={selection}
-                      onSelect={setSelection}
-                      onStage={stageFiles}
-                      disabled={!!busy}
-                    />
-                    {!snapshot.files.length && (
-                      <div className="clean-workspace">
-                        <span>
-                          <Check size={25} />
-                        </span>
-                        <strong>工作区很干净</strong>
-                        <p>
-                          所有修改都已妥善收好。
-                          <br />
-                          可以开始下一个好想法了。
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  <form
-                    className="commit-form"
-                    onSubmit={submitCommit}
-                    onKeyDown={(e) => {
-                      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') submitCommit(e);
-                    }}
+                  <ResizableSplit
+                    className="changes-body"
+                    name="commit-editor"
+                    label="调整文件列表与提交编辑区高度"
+                    axis="vertical"
+                    initial={0.55}
+                    minFirst={100}
+                    minSecond={240}
                   >
-                    <div className="commit-form-title">
-                      <GitCommitHorizontal size={17} />
-                      <strong>创建提交</strong>
-                      <span>{staged.length} 个已暂存</span>
-                    </div>
-                    <input
-                      className="commit-title"
-                      aria-label="提交说明"
-                      placeholder="这次做了什么改变？"
-                      maxLength={250}
-                      value={draft.title}
-                      onChange={(e) => setDraft({ title: e.target.value })}
-                      disabled={!!busy}
-                    />
-                    <textarea
-                      aria-label="提交详细说明"
-                      placeholder="添加详细说明（可选）"
-                      value={draft.body}
-                      maxLength={18000}
-                      onChange={(e) => setDraft({ body: e.target.value })}
-                      disabled={!!busy}
-                    />
-                    <button
-                      className="button primary commit-button"
-                      type="submit"
-                      disabled={
-                        !!busy ||
-                        !staged.length ||
-                        !draft.title.trim() ||
-                        conflicts ||
-                        snapshot.detached ||
-                        !!snapshot.state
-                      }
-                    >
-                      {busy === '创建提交' ? (
-                        <LoaderCircle size={16} className="spin" />
-                      ) : (
-                        <GitCommitHorizontal size={17} />
+                    <div className="file-groups">
+                      <FileGroup
+                        title="未暂存的更改"
+                        files={unstaged}
+                        staged={false}
+                        search={search}
+                        selection={selection}
+                        onSelect={setSelection}
+                        onStage={stageFiles}
+                        disabled={!!busy}
+                      />
+                      <FileGroup
+                        title="已暂存的更改"
+                        files={staged}
+                        staged
+                        search={search}
+                        selection={selection}
+                        onSelect={setSelection}
+                        onStage={stageFiles}
+                        disabled={!!busy}
+                      />
+                      {!snapshot.files.length && (
+                        <div className="clean-workspace">
+                          <span>
+                            <Check size={25} />
+                          </span>
+                          <strong>工作区很干净</strong>
+                          <p>
+                            所有修改都已妥善收好。
+                            <br />
+                            可以开始下一个好想法了。
+                          </p>
+                        </div>
                       )}
-                      <span>提交到 {snapshot.detached ? '分支' : snapshot.branch}</span>
-                      <ArrowRight size={16} />
-                    </button>
-                    <div className="commit-footnote">
-                      <ShieldCheck size={12} />
-                      <span>仅提交已暂存的修改</span>
-                      <kbd>⌘ ↵</kbd>
                     </div>
-                  </form>
+                    <form
+                      className="commit-form"
+                      onSubmit={submitCommit}
+                      onKeyDown={(e) => {
+                        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') submitCommit(e);
+                      }}
+                    >
+                      <div className="commit-form-title">
+                        <GitCommitHorizontal size={17} />
+                        <strong>创建提交</strong>
+                        <span>{staged.length} 个已暂存</span>
+                      </div>
+                      <input
+                        className="commit-title"
+                        aria-label="提交说明"
+                        placeholder="这次做了什么改变？"
+                        maxLength={250}
+                        value={draft.title}
+                        onChange={(e) => setDraft({ title: e.target.value })}
+                        disabled={!!busy}
+                      />
+                      <textarea
+                        aria-label="提交详细说明"
+                        placeholder="添加详细说明（可选）"
+                        value={draft.body}
+                        maxLength={18000}
+                        onChange={(e) => setDraft({ body: e.target.value })}
+                        disabled={!!busy}
+                      />
+                      <button
+                        className="button primary commit-button"
+                        type="submit"
+                        disabled={
+                          !!busy ||
+                          !staged.length ||
+                          !draft.title.trim() ||
+                          conflicts ||
+                          snapshot.detached ||
+                          !!snapshot.state
+                        }
+                      >
+                        {busy === '创建提交' ? (
+                          <LoaderCircle size={16} className="spin" />
+                        ) : (
+                          <GitCommitHorizontal size={17} />
+                        )}
+                        <span>提交到 {snapshot.detached ? '分支' : snapshot.branch}</span>
+                        <ArrowRight size={16} />
+                      </button>
+                      <div className="commit-footnote">
+                        <ShieldCheck size={12} />
+                        <span>仅提交已暂存的修改</span>
+                        <kbd>⌘ ↵</kbd>
+                      </div>
+                    </form>
+                  </ResizableSplit>
                 </section>
                 <DiffPanel
                   codeSize={preferences.codeSize}
@@ -1008,12 +1156,25 @@ export default function App() {
                   }
                   disabled={!!busy}
                 />
-              </div>
+              </ResizableSplit>
             )}
             {view === 'history' && (
-              <div className="history-workbench">
+              <ResizableSplit
+                className="history-workbench"
+                name="history"
+                label="调整历史列表与提交详情宽度"
+                initial={0.43}
+                minFirst={260}
+                minSecond={300}
+              >
                 <HistoryPanel
-                  commits={snapshot.commits}
+                  scope={JSON.stringify([snapshot.root, snapshot.historyRevision])}
+                  commits={history.commits}
+                  loading={history.loading}
+                  error={history.error}
+                  hasMore={history.hasMore}
+                  onLoadMore={history.loadMore}
+                  onReload={history.reload}
                   selection={selection}
                   search={search}
                   onSelect={setSelection}
@@ -1022,7 +1183,7 @@ export default function App() {
                   root={snapshot.root}
                   commit={
                     selection?.kind === 'commit'
-                      ? snapshot.commits.find((c) => c.hash === selection.hash)
+                      ? history.commits.find((c) => c.hash === selection.hash)
                       : undefined
                   }
                   version={diffVersion}
@@ -1034,13 +1195,13 @@ export default function App() {
                       loading={loading}
                       error={error}
                       selection={selection}
-                      snapshot={snapshot}
+                      snapshot={{ ...snapshot, commits: history.commits }}
                       onStage={stageFiles}
                       disabled
                     />
                   )}
                 />
-              </div>
+              </ResizableSplit>
             )}
             {view === 'stashes' && (
               <StashPanel
@@ -1072,6 +1233,18 @@ export default function App() {
                 version={diffVersion}
                 busy={!!busy}
                 run={mutate}
+              />
+            )}
+            {view === 'workflow' && (
+              <WorkflowPanel
+                snapshot={snapshot}
+                version={diffVersion}
+                busy={!!busy}
+                run={mutate}
+                onSelectConflict={(path) => {
+                  setView('changes');
+                  setSelection({ kind: 'file', path, staged: false });
+                }}
               />
             )}
             {view === 'worktrees' && (
@@ -1114,45 +1287,6 @@ export default function App() {
                     </article>
                   ))}
                 </div>
-              </section>
-            )}
-            {view === 'activity' && (
-              <section className="collection-panel">
-                <div className="collection-header">
-                  <span>
-                    <Clock3 size={18} /> 本次会话的操作
-                  </span>
-                  <span className="tag">SESSION LOG</span>
-                </div>
-                <p className="collection-intro">
-                  记录当前仓库最近 40
-                  次操作的执行结果。不会把所有操作标记为“可撤销”，也不会持久化命令输出。
-                </p>
-                {snapshot.operations.length ? (
-                  <div className="operation-list">
-                    {snapshot.operations.map((operation, i) => (
-                      <article className="operation-item" key={`${operation.time}-${i}`}>
-                        <span className={`operation-icon ${operation.success ? '' : 'failed'}`}>
-                          {operation.success ? <Check size={17} /> : <X size={17} />}
-                        </span>
-                        <div>
-                          <h3>
-                            {operation.label}
-                            <span>{operation.success ? '已完成' : '未完成'}</span>
-                          </h3>
-                          <pre>{operation.detail || 'Git 命令执行成功，无额外输出。'}</pre>
-                        </div>
-                        <time>{formatDate(operation.time)}</time>
-                      </article>
-                    ))}
-                  </div>
-                ) : (
-                  <EmptyState
-                    icon={<Clock3 size={28} />}
-                    title="每一步，都有记录"
-                    text="暂存、提交或同步后，执行结果会显示在这里。"
-                  />
-                )}
               </section>
             )}
           </>
@@ -1208,6 +1342,13 @@ export default function App() {
         )}
       </main>
 
+      {sessionError && (
+        <div className="session-warning" role="status">
+          {sessionError}
+        </div>
+      )}
+      <OperationBar busy={busy} hidden={showNewRepository} />
+
       <footer className="statusbar">
         <span>
           <span className="status-dot" />
@@ -1251,7 +1392,11 @@ export default function App() {
       {notice && (
         <div className={`toast ${notice.kind}`} role={notice.kind === 'error' ? 'alert' : 'status'}>
           {notice.kind === 'error' ? <XCircle size={19} /> : <CheckCircle2 size={19} />}
-          <span>{notice.text}</span>
+          {notice.kind === 'error' ? (
+            <ErrorDetails message={notice.text} alert={false} />
+          ) : (
+            <span>{notice.text}</span>
+          )}
           <button aria-label="关闭提示" onClick={() => setNotice(null)}>
             <X size={16} />
           </button>
@@ -1269,7 +1414,7 @@ export default function App() {
         <Dialog onClose={() => setShowSettings(false)}>
           <div className="settings-title">
             <div>
-              <div className="modal-kicker">GITLANE / PREFERENCES</div>
+              <div className="modal-kicker">SAKURAGIT / PREFERENCES</div>
               <h2 id="modal-title">给专注，换一种底色。</h2>
             </div>
           </div>
@@ -1284,7 +1429,7 @@ export default function App() {
         <Dialog onClose={() => !busy && setModal(null)}>
           <form onSubmit={modalSubmit}>
             <div className="modal-kicker">
-              <Mark small /> GITLANE /{' '}
+              <Mark small /> SAKURAGIT /{' '}
               {modal.kind === 'open'
                 ? 'REPOSITORIES'
                 : modal.kind === 'help'
@@ -1564,7 +1709,8 @@ export default function App() {
                   </span>
                 </div>
                 <p className="guide-limit">
-                  当前版本不支持冲突编辑、Rebase、强推、克隆和工作树创建。SSH 与凭据沿用系统 Git
+                  冲突可在开发工具中调用外部编辑器、标记解决并继续或中止流程；不提供内置三方合并编辑、交互式
+                  Rebase、强推或工作树创建。SSH 与凭据沿用系统 Git
                   配置；如认证需要交互，请先在终端完成。
                 </p>
                 <button
@@ -1631,6 +1777,11 @@ function FileGroup({
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const filtered = files.filter((file) => file.path.toLowerCase().includes(search.toLowerCase()));
+  const selectedIndex =
+    selection?.kind === 'file' && selection.staged === staged
+      ? filtered.findIndex((file) => file.path === selection.path)
+      : -1;
+  const windowed = useVirtualRows(filtered.length, 56, 200, search + collapsed, selectedIndex);
   return (
     <section className={`file-group ${staged ? 'staged' : ''}`}>
       <div className="file-group-header">
@@ -1650,8 +1801,9 @@ function FileGroup({
         </button>
       </div>
       {!collapsed && (
-        <div className="file-list">
-          {filtered.map((file) => {
+        <div className={`file-list ${windowed.enabled ? 'virtual-files' : ''}`} ref={windowed.ref}>
+          {!!windowed.before && <div style={{ height: windowed.before }} aria-hidden="true" />}
+          {filtered.slice(windowed.start, windowed.end).map((file) => {
             const status = fileStatus(file, staged);
             const selected =
               selection?.kind === 'file' &&
@@ -1694,6 +1846,7 @@ function FileGroup({
               </div>
             );
           })}
+          {!!windowed.after && <div style={{ height: windowed.after }} aria-hidden="true" />}
           {!filtered.length && (
             <div className="group-empty">
               {files.length
@@ -1706,119 +1859,5 @@ function FileGroup({
         </div>
       )}
     </section>
-  );
-}
-
-function HistoryPanel({
-  commits,
-  selection,
-  search,
-  onSelect,
-}: {
-  commits: Commit[];
-  selection: Selection;
-  search: string;
-  onSelect: (selection: Selection) => void;
-}) {
-  const graph = useMemo(() => buildGraph(commits), [commits]);
-  const query = search.toLowerCase();
-  const rows = commits
-    .map((commit, i) => ({ commit, graph: graph[i] }))
-    .filter(({ commit }) =>
-      `${commit.subject} ${commit.author} ${commit.authorEmail} ${commit.hash}`
-        .toLowerCase()
-        .includes(query),
-    );
-  const graphWidth = Math.max(56, ...graph.map((row) => 40 + row.lane * 18));
-  return (
-    <section className="history-panel" aria-label="提交列表">
-      <div className="panel-title">
-        <span>
-          提交轨迹 <span className="muted-count">{commits.length}</span>
-        </span>
-        <span className="mono-label">LATEST 100</span>
-      </div>
-      <div className="history-caption">
-        <GitBranch size={13} />
-        {search ? '搜索结果 · 暂不显示连线' : '按拓扑顺序展示所有分支与 HEAD'}
-      </div>
-      <div className="commit-list">
-        {rows.length ? (
-          rows.map(({ commit, graph: row }) => (
-            <button
-              className={`commit-row ${selection?.kind === 'commit' && selection.hash === commit.hash ? 'selected' : ''}`}
-              key={commit.hash}
-              aria-pressed={selection?.kind === 'commit' && selection.hash === commit.hash}
-              onClick={() => onSelect({ kind: 'commit', hash: commit.hash })}
-            >
-              {!search && (
-                <svg
-                  className="commit-graph"
-                  width={graphWidth}
-                  height={84}
-                  viewBox={`0 0 ${graphWidth} 66`}
-                  preserveAspectRatio="none"
-                  aria-hidden="true"
-                >
-                  {row.paths.map((path, i) => (
-                    <path d={path.d} stroke={path.color} strokeWidth="2" fill="none" key={i} />
-                  ))}
-                  <circle
-                    cx={20 + row.lane * 18}
-                    cy="33"
-                    r="5"
-                    fill="var(--panel)"
-                    stroke={row.color}
-                    strokeWidth="2.5"
-                  />
-                </svg>
-              )}
-              <span className="commit-info">
-                <strong>{commit.subject}</strong>
-                <span className="commit-meta">
-                  <span className="commit-author" title={commit.authorEmail}>
-                    <span className="author-avatar small">
-                      {commit.author.slice(0, 2).toUpperCase()}
-                    </span>
-                    <b>{commit.author}</b>
-                  </span>
-                  <span>·</span>
-                  <time>{formatDate(commit.date)}</time>
-                  <code>{commit.short}</code>
-                </span>
-                {commit.refs && (
-                  <span className="commit-refs">
-                    {commit.refs.split(', ').map((ref) => (
-                      <span className={ref.startsWith('HEAD') ? 'head-ref' : ''} key={ref}>
-                        <GitBranch size={10} />
-                        {ref.replace('HEAD -> ', '')}
-                      </span>
-                    ))}
-                  </span>
-                )}
-              </span>
-            </button>
-          ))
-        ) : (
-          <EmptyState
-            icon={<GitCommitHorizontal size={27} />}
-            title={search ? '没有匹配的提交' : '故事正要开始'}
-            text={
-              search ? '试试提交说明、作者或完整提交 ID。' : '创建第一次提交后，轨迹会显示在这里。'
-            }
-          />
-        )}
-      </div>
-    </section>
-  );
-}
-
-function EmptyState({ icon, title, text }: { icon: ReactNode; title: string; text: string }) {
-  return (
-    <div className="empty-state">
-      <span className="empty-icon">{icon}</span>
-      <strong>{title}</strong>
-      <p>{text}</p>
-    </div>
   );
 }

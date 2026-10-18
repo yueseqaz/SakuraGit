@@ -144,7 +144,7 @@ func (e *Engine) Publish(ctx context.Context, root, remote, branch string) (Resu
 	if _, err := run(ctx, e.root, "check-ref-format", "refs/heads/"+branch); err != nil {
 		return Result{}, errors.New("无效的远程分支名")
 	}
-	out, err := run(ctx, e.root, "push", "--no-force", "--no-follow-tags", "--recurse-submodules=no", "--set-upstream", remote, "HEAD:refs/heads/"+branch)
-	e.record("首次推送 "+remote+"/"+branch, out, err)
+	out, err := run(ctx, e.root, "push", "--progress", "--no-force", "--no-follow-tags", "--recurse-submodules=no", "--set-upstream", remote, "HEAD:refs/heads/"+branch)
+
 	return Result{Output: out}, err
 }

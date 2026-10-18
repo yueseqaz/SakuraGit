@@ -592,3 +592,97 @@
     transform: rotate(-90deg);
   }
 }
+
+/* Muted ink colors stay readable over both addition and deletion backgrounds. */
+:root {
+  --syntax-comment: #697b83;
+  --syntax-keyword: #315e94;
+  --syntax-string: #366b51;
+  --syntax-number: #946022;
+  --syntax-function: #79538b;
+  --syntax-tag: #97604b;
+  --word-add: #a4d7bc;
+  --word-remove: #edb7b4;
+}
+:root[data-theme='dark'] {
+  --syntax-comment: #91a0aa;
+  --syntax-keyword: #98bfe8;
+  --syntax-string: #aad4b4;
+  --syntax-number: #e4bb86;
+  --syntax-function: #cfb7df;
+  --syntax-tag: #e3b29e;
+  --word-add: #315d4b;
+  --word-remove: #754349;
+}
+.diff-code .token.syntax-comment,
+.diff-code .token.syntax-prolog {
+  color: var(--syntax-comment);
+  font-style: italic;
+}
+.diff-code .token.syntax-keyword,
+.diff-code .token.syntax-boolean,
+.diff-code .token.syntax-atrule {
+  color: var(--syntax-keyword);
+}
+.diff-code .token.syntax-string,
+.diff-code .token.syntax-attr-value,
+.diff-code .token.syntax-template-string {
+  color: var(--syntax-string);
+}
+.diff-code .token.syntax-number,
+.diff-code .token.syntax-constant {
+  color: var(--syntax-number);
+}
+.diff-code .token.syntax-function,
+.diff-code .token.syntax-class-name {
+  color: var(--syntax-function);
+}
+.diff-code .token.syntax-tag,
+.diff-code .token.syntax-property,
+.diff-code .token.syntax-attr-name {
+  color: var(--syntax-tag);
+}
+.diff-code .add .word-change {
+  background: var(--word-add);
+  box-shadow: 0 0 0 1px var(--word-add);
+  border-radius: 2px;
+}
+.diff-code .remove .word-change {
+  background: var(--word-remove);
+  box-shadow: 0 0 0 1px var(--word-remove);
+  border-radius: 2px;
+}
+.history-pagination {
+  padding: 18px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+.history-pagination > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.history-pagination p {
+  overflow-wrap: anywhere;
+}
+.clone-branch-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  margin-bottom: 8px;
+}
+.clone-branch-heading .publish-label {
+  margin: 0;
+}
+.clone-branch-hint {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
+  margin: 8px 0 12px;
+}
+#clone-branch {
+  width: 100%;
+}

@@ -4,6 +4,7 @@ import { CheckCircle2, Globe2, KeyRound, Plus, RefreshCw, Trash2, UserRound } fr
 import { Git, type Diagnostics, type RemoteInfo } from './mygo';
 import { Dialog } from './Dialog';
 import type { Mutate } from './panel-types';
+import { ErrorDetails } from './ErrorDetails';
 
 type Edit = { action: 'add' | 'fetch-url' | 'push-url' | 'remove'; item?: RemoteInfo };
 export function RemotePanel({
@@ -115,8 +116,8 @@ export function RemotePanel({
         管理本仓库连接，不自动 Fetch，不修改全局 Git 配置。网络权限以实际 Fetch／Push 的结果为准。
       </p>
       {error ? (
-        <div className="panel-error" role="alert">
-          {error}
+        <div className="panel-error">
+          <ErrorDetails message={error} />
           <button className="button compact" onClick={() => setReload((n) => n + 1)}>
             重新读取
           </button>
@@ -239,7 +240,7 @@ export function RemotePanel({
             <strong>连接失败时怎么检查？</strong>
             <p>
               HTTPS：检查系统凭据助手和 Token
-              权限。SSH：检查密钥、ssh-agent、主机指纹及仓库访问权限。需要交互确认时，请先在终端完成；错误详情可在操作记录中查看。
+              权限。SSH：检查密钥、ssh-agent、主机指纹及仓库访问权限。需要交互确认时，请先在终端完成；错误详情会直接显示在当前操作界面。
             </p>
           </div>
         </>
@@ -252,7 +253,7 @@ export function RemotePanel({
               void submit();
             }}
           >
-            <div className="modal-kicker">GITLANE / REMOTES</div>
+            <div className="modal-kicker">SAKURAGIT / REMOTES</div>
             <h2 id="modal-title">
               {edit.action === 'add'
                 ? '连接一个远程仓库。'
@@ -318,7 +319,7 @@ export function RemotePanel({
               void saveIdentity();
             }}
           >
-            <div className="modal-kicker">GITLANE / IDENTITY</div>
+            <div className="modal-kicker">SAKURAGIT / IDENTITY</div>
             <h2 id="modal-title">为提交留下你的署名。</h2>
             <p className="modal-description">
               仅写入本仓库的 user.name 和

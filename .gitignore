@@ -5,3 +5,10 @@ build/
 .DS_Store
 *.log
 *.tsbuildinfo
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx

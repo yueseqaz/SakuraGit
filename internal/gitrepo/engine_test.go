@@ -12,7 +12,7 @@ import (
 func git(t *testing.T, dir string, args ...string) string {
 	t.Helper()
 	cmd := exec.Command("git", append([]string{"-C", dir}, args...)...)
-	cmd.Env = append(os.Environ(), "GIT_CONFIG_NOSYSTEM=1", "GIT_CONFIG_GLOBAL="+os.DevNull, "GIT_AUTHOR_NAME=Gitlane Test", "GIT_AUTHOR_EMAIL=gitlane@example.invalid", "GIT_COMMITTER_NAME=Gitlane Test", "GIT_COMMITTER_EMAIL=gitlane@example.invalid", "GIT_TERMINAL_PROMPT=0")
+	cmd.Env = append(os.Environ(), "GIT_CONFIG_NOSYSTEM=1", "GIT_CONFIG_GLOBAL="+os.DevNull, "GIT_AUTHOR_NAME=SakuraGit Test", "GIT_AUTHOR_EMAIL=sakuragit@example.invalid", "GIT_COMMITTER_NAME=SakuraGit Test", "GIT_COMMITTER_EMAIL=sakuragit@example.invalid", "GIT_TERMINAL_PROMPT=0")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("git %v: %v\n%s", args, err, out)
@@ -24,8 +24,8 @@ func fixture(t *testing.T, committed bool) (*Engine, string) {
 	t.Helper()
 	root := t.TempDir()
 	git(t, root, "init", "-b", "main")
-	git(t, root, "config", "user.name", "Gitlane Test")
-	git(t, root, "config", "user.email", "gitlane@example.invalid")
+	git(t, root, "config", "user.name", "SakuraGit Test")
+	git(t, root, "config", "user.email", "sakuragit@example.invalid")
 	git(t, root, "config", "commit.gpgsign", "false")
 	write(t, root, "hello.txt", "hello\n")
 	if committed {

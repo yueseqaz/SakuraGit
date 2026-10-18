@@ -4,6 +4,7 @@ import { Archive, ArrowDownToLine, Plus, Trash2 } from 'lucide-react';
 import { Git, type Diff, type Snapshot, type Stash } from './mygo';
 import { Dialog } from './Dialog';
 import { demoDiff } from './demo';
+import { ResizableSplit } from './ResizableSplit';
 import type { Mutate } from './panel-types';
 
 type Action = { kind: 'save' } | { kind: 'restore' | 'drop'; item: Stash };
@@ -75,7 +76,14 @@ export function StashPanel({
   };
   return (
     <>
-      <div className="stash-workbench">
+      <ResizableSplit
+        className="stash-workbench"
+        name="stash"
+        label="调整工作现场列表与差异宽度"
+        initial={0.34}
+        minFirst={230}
+        minSecond={300}
+      >
         <section className="stash-list-panel" aria-label="Stash 列表">
           <div className="panel-title">
             <span>
@@ -151,7 +159,7 @@ export function StashPanel({
           error,
           item,
         )}
-      </div>
+      </ResizableSplit>
       {action && (
         <Dialog onClose={() => !busy && setAction(null)}>
           <form
@@ -160,7 +168,7 @@ export function StashPanel({
               void submit();
             }}
           >
-            <div className="modal-kicker">GITLANE / STASH</div>
+            <div className="modal-kicker">SAKURAGIT / STASH</div>
             <h2 id="modal-title">
               {action.kind === 'save'
                 ? '先保存，再切换思路。'

@@ -1,4 +1,4 @@
-module gitlane
+module github.com/yueseqaz/SakuraGit
 
 go 1.27.1
 
