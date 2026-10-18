@@ -2,6 +2,8 @@
 
 **让每一次 Git 变更，都清晰可见。**
 
+[![CI](https://github.com/yueseqaz/SakuraGit/actions/workflows/ci.yml/badge.svg)](https://github.com/yueseqaz/SakuraGit/actions/workflows/ci.yml) · [GitHub Releases](https://github.com/yueseqaz/SakuraGit/releases)
+
 [English](README.en.md) · [技术验证记录](QA.md) · [MyGo](https://mygo.egoist.dev/)
 
 SakuraGit 是一个使用 **MyGo + Go + React + TypeScript** 构建的轻量 Git 桌面客户端。它用系统 WebView 渲染界面，通过系统 Git 操作本地仓库，**不捆绑 Chromium**。雾霾蓝主题、可拖动面板和专注 Diff 阅读，让日常提交、代码审阅和分支操作更直观。
@@ -31,6 +33,18 @@ SakuraGit 是一个使用 **MyGo + Go + React + TypeScript** 构建的轻量 Git
 
 ![SakuraGit 提交历史](docs/screenshots/history.png)
 
+## 下载与跨平台构建
+
+前往 [GitHub Releases](https://github.com/yueseqaz/SakuraGit/releases) 下载成功发布的版本；构建全程在 GitHub 托管 runner 上进行，不上传开发者本机二进制文件。
+
+| 系统 | 架构与安装格式 |
+| --- | --- |
+| macOS | Intel + Apple Silicon 通用 `.dmg` |
+| Windows | x64 / ARM64，分别提供 `setup.exe` |
+| Linux | x64 / ARM64，分别提供 `.deb` 和 `.tar.gz` |
+
+所有包均需系统 Git。Windows 需要 WebView2 Runtime；Linux 需要图形桌面、GTK 3 和 WebKitGTK 4.1，`.deb` 会声明依赖。macOS 仅 ad-hoc 签名、未公证，Windows 未做 Authenticode 签名，系统可能显示安全警告。**跨平台构建通过不等于所有系统、架构和图形交互均已实机验证**，Windows / Linux ARM64 使用同系统 x64 runner 交叉编译。下载后可使用附件 `SHA256SUMS` 核对文件。
+
 ## 快速开始
 
 ### 环境要求
@@ -42,8 +56,8 @@ SakuraGit 是一个使用 **MyGo + Go + React + TypeScript** 构建的轻量 Git
 
 | 平台 | 验证状态 |
 | --- | --- |
-| macOS Apple Silicon / ARM64 | 已构建、签名校验及原生冒烟验证 |
-| macOS Intel、Windows、Linux | 尚未实机验证，不承诺现成安装包或完整兼容性 |
+| macOS Apple Silicon / ARM64 | 本地界面与原生冒烟已验证；Actions 提供通用包 |
+| macOS Intel、Windows、Linux | Actions 构建目标；图形界面和所有目标设备尚未完整实测 |
 
 ### 本地开发
 
@@ -84,7 +98,7 @@ open build/darwin-arm64/SakuraGit.app
 build/darwin-arm64/SakuraGit.app/Contents/MacOS/SakuraGit --repo /absolute/path/to/repository
 ```
 
-目前本机构建使用 **ad-hoc 签名，未经过 Apple Developer ID 签名或公证**。源码公开不代表已经提供正式发行安装包；请只运行你信任并自行验证的构建。
+目前本机构建使用 **ad-hoc 签名，未经过 Apple Developer ID 签名或公证**。预编译包通过 GitHub Release 工作流提供；请只运行你信任并自行验证的构建。
 
 ## 使用提示
 
@@ -125,6 +139,22 @@ scripts/native-smoke.sh build/darwin-arm64/SakuraGit.app/Contents/MacOS/SakuraGi
 ```
 
 该脚本验证 426 条历史的自动滚动加载、最早提交详情、全历史搜索、打包后的高亮 Worker、桌面刷新保护，以及纯本地克隆等。日志与临时仓库路径记录在 `build/`，测试仓库保留供检查。跳过的项目不计为通过。详细覆盖范围和未验证事项见 [QA.md](QA.md)。
+
+## GitHub Actions 与发布
+
+- `CI`：推送 `main`、提交 Pull Request 或手动触发时，在 macOS / Windows / Linux 上运行前端测试、前端构建、Go race 测试和 `go vet`，通过后构建五组平台产物。普通 CI 的安装包可在该运行的 Artifacts 下载，保留 14 天。
+- `Release`：推送 `v*` 标签，或手动选择一个已有标签；版本必须与 `package.json`、lockfile、`mygo.json`、Go 和界面的版本一致，并存在 `docs/releases/<tag>.md`。
+- 所有平台通过后，收集七个安装包，验证 Windows / Linux 主程序架构、macOS 通用架构与签名，并生成 `SHA256SUMS`。先上传到草稿，再公开，避免半成品 Release。
+- 标签触发默认发布为早期预览；手动发布可选择是否为 prerelease。不覆盖已经公开的 Release。Actions 使用内置 `GITHUB_TOKEN`，不需要添加个人 Token；只在最终发布 job 授予仓库写权限。
+
+发布新版本时，更新版本号和发布说明，先确认 `main` 的 CI 通过，再执行：
+
+```sh
+git tag v0.5.2  # 示例：替换为对应的新版本号
+git push origin v0.5.2
+```
+
+工作流见 [CI](.github/workflows/ci.yml)、[跨平台构建](.github/workflows/build.yml) 和 [Release](.github/workflows/release.yml)。尚未配置应用内自动更新、Apple 公证或 Windows 签名证书。
 
 ## 项目结构
 

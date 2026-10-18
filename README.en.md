@@ -2,6 +2,8 @@
 
 **A clearer view of every Git change.**
 
+[![CI](https://github.com/yueseqaz/SakuraGit/actions/workflows/ci.yml/badge.svg)](https://github.com/yueseqaz/SakuraGit/actions/workflows/ci.yml) · [GitHub Releases](https://github.com/yueseqaz/SakuraGit/releases)
+
 [简体中文](README.md) · [Verification Notes](QA.md) · [MyGo](https://mygo.egoist.dev/)
 
 SakuraGit is a lightweight Git desktop client built with **MyGo, Go, React, and TypeScript**. It renders through the operating system's WebView and works with your installed Git, **without bundling Chromium**. Mist-blue themes, resizable panels, and a focused Diff reader make everyday commits, code review, and branch operations easier to follow.
@@ -31,6 +33,18 @@ Workflow continuation / abort supports Git-initiated Merge, Rebase, Cherry-pick,
 
 ![SakuraGit commit history](docs/screenshots/history.png)
 
+## Downloads And Cross-platform Builds
+
+Download successfully published versions from [GitHub Releases](https://github.com/yueseqaz/SakuraGit/releases). Binaries are built entirely on GitHub-hosted runners, not uploaded from a developer's machine.
+
+| OS | Architectures and packages |
+| --- | --- |
+| macOS | Universal Intel + Apple Silicon `.dmg` |
+| Windows | Separate x64 / ARM64 `setup.exe` installers |
+| Linux | Separate x64 / ARM64 `.deb` and `.tar.gz` packages |
+
+All packages require system Git. Windows needs WebView2 Runtime. Linux needs a graphical desktop, GTK 3, and WebKitGTK 4.1; Debian packages declare the dependencies. macOS builds are ad-hoc signed but not notarized; Windows installers are not Authenticode signed. Security warnings may appear. **A successful build is not comprehensive device or GUI validation.** Windows / Linux ARM64 binaries are cross-compiled on same-OS x64 runners. Use the attached `SHA256SUMS` to check downloads.
+
 ## Getting Started
 
 ### Requirements
@@ -42,8 +56,8 @@ Workflow continuation / abort supports Git-initiated Merge, Rebase, Cherry-pick,
 
 | Platform | Verification status |
 | --- | --- |
-| macOS Apple Silicon / ARM64 | Build, signature verification, and native smoke checks completed |
-| macOS Intel, Windows, Linux | Not tested on real hardware; no promise of ready-made installers or full compatibility |
+| macOS Apple Silicon / ARM64 | Local GUI and native smoke checks; universal package through Actions |
+| macOS Intel, Windows, Linux | Actions build targets; GUI and all target devices not comprehensively tested |
 
 ### Development
 
@@ -84,7 +98,7 @@ open build/darwin-arm64/SakuraGit.app
 build/darwin-arm64/SakuraGit.app/Contents/MacOS/SakuraGit --repo /absolute/path/to/repository
 ```
 
-Local builds currently use **ad-hoc signing, without Apple Developer ID signing or notarization**. A public source repository is not a promise of official release binaries. Run only builds you trust and have verified.
+Local builds currently use **ad-hoc signing, without Apple Developer ID signing or notarization**. Prebuilt packages are provided through the GitHub Release workflow. Run only builds you trust and have verified.
 
 ## Usage Tips
 
@@ -125,6 +139,22 @@ scripts/native-smoke.sh build/darwin-arm64/SakuraGit.app/Contents/MacOS/SakuraGi
 ```
 
 The script checks automatic scroll loading across 426 commits, the oldest commit's details, full-history search, the bundled highlighting Worker, desktop reload guards, and a local-only clone. Logs and the retained fixture's path are recorded in `build/`. The subset explicitly skips visibility-dependent polling and subsequent push-confirmation checks; skipped checks are not passes. See [QA.md](QA.md) for detailed coverage and unverified behavior.
+
+## GitHub Actions And Releases
+
+- `CI`: runs on pushes to `main`, Pull Requests, or manual dispatch. Frontend tests/builds, Go race tests, and `go vet` run on macOS, Windows, and Linux before packaging five target groups. Ordinary CI artifacts are available from the run for 14 days.
+- `Release`: runs on `v*` tags or manual selection of an existing tag. The tag must match the application version in package/lock/MyGo metadata, Go, and UI labels, with release notes in `docs/releases/<tag>.md`.
+- After every target succeeds, seven packages are collected. Windows / Linux executable architectures and the macOS universal binary/signature are checked, and `SHA256SUMS` is generated. Assets upload to a draft before publication, preventing partial public releases.
+- Tag-triggered releases default to early-access prereleases. Manual dispatch can choose prerelease status. Published releases are never overwritten. The built-in `GITHUB_TOKEN` is sufficient; no personal token is needed. Only the final publishing job receives repository write permission.
+
+To publish a new version, update its version metadata and release notes, wait for `main` CI to pass, then run:
+
+```sh
+git tag v0.5.2  # Example: replace with the new version number
+git push origin v0.5.2
+```
+
+See the [CI](.github/workflows/ci.yml), [cross-platform build](.github/workflows/build.yml), and [Release](.github/workflows/release.yml) workflows. In-app auto-updates, Apple notarization, and Windows signing certificates are not configured.
 
 ## Source Layout
 
