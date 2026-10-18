@@ -1,0 +1,32 @@
+{
+  "name": "gitlane",
+  "private": true,
+  "version": "0.3.1",
+  "type": "module",
+  "scripts": {
+    "dev": "go run github.com/egoist/mygo/cmd/mygo dev",
+    "dev:web": "vite --host 127.0.0.1",
+    "generate": "go run github.com/egoist/mygo/cmd/mygo generate",
+    "build:web": "tsc -b && vite build",
+    "build": "go run github.com/egoist/mygo/cmd/mygo build",
+    "test": "go test -race ./... && vitest run",
+    "test:web": "vitest run"
+  },
+  "dependencies": {
+    "@fontsource-variable/dm-sans": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "lucide-react": "^0.468.0",
+    "mygo-runtime": "0.5.5",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "prettier": "^3.9.10",
+    "typescript": "^5.9.0",
+    "vite": "^7.1.0",
+    "vitest": "^3.2.0"
+  }
+}
