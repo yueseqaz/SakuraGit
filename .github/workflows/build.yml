@@ -42,6 +42,9 @@ jobs:
           node scripts/release-tools.mjs check-version
           node --test scripts/release-tools.node-test.mjs
       - run: npm ci
+      - name: Audit dependencies for high-severity vulnerabilities
+        if: runner.os == 'Linux'
+        run: npm audit --audit-level=high --registry=https://registry.npmjs.org
       - name: Frontend tests and production assets
         run: |
           npm run test:web

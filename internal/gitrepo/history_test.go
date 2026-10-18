@@ -16,7 +16,8 @@ func TestCommitDetailsAndFileDiff(t *testing.T) {
 	if err != nil || len(d.Files) != 1 || d.Files[0].Additions != 1 || d.Commit.AuthorEmail != "sakuragit@example.invalid" {
 		t.Fatalf("root: %+v %v", d, err)
 	}
-	if err := os.Rename(filepath.Join(root, "hello.txt"), filepath.Join(root, "new\nname.txt")); err != nil {
+	renamed := fixtureFilename("new\nname.txt")
+	if err := os.Rename(filepath.Join(root, "hello.txt"), filepath.Join(root, renamed)); err != nil {
 		t.Fatal(err)
 	}
 	write(t, root, "binary.dat", "\x00\x01binary")
@@ -35,7 +36,7 @@ func TestCommitDetailsAndFileDiff(t *testing.T) {
 		if f.Path == "binary.dat" && (!patch.Binary || patch.Text != "") {
 			t.Fatalf("binary: %+v", patch)
 		}
-		if f.Path == "new\nname.txt" && (f.OldPath != "hello.txt" || !strings.Contains(patch.Text, "rename from")) {
+		if f.Path == renamed && (f.OldPath != "hello.txt" || !strings.Contains(patch.Text, "rename from")) {
 			t.Fatalf("rename: %+v %+v", f, patch)
 		}
 	}

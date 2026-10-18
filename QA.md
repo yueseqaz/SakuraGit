@@ -2,6 +2,14 @@
 
 Latest verification: 2026-10-19, macOS Apple Silicon. Earlier version sections are retained as historical records, including the former Gitlane product name and its old build paths.
 
+## GitHub-hosted Cross-platform Pipeline (0.5.2)
+
+- The [CI workflow](https://github.com/yueseqaz/SakuraGit/actions/workflows/ci.yml) requires the 78 frontend tests, strict frontend build, Go race tests, Go vet, and five Node release-tool tests on macOS, Windows, and Linux. A high-severity dependency audit also gates packaging. Vitest is updated to its patched 4.1 release line and lockfile tarballs resolve from the official npm registry.
+- Five package jobs target macOS universal (ARM64 + x86_64), Windows amd64/arm64, and Linux amd64/arm64. Packaging, PE/ELF architecture checks, macOS universal/signature checks, artifact upload, and SHA-256 generation happen on GitHub-hosted runners, not the developer machine. Windows/Linux ARM64 are cross-compiled, not executed on ARM64 hardware.
+- Native Go tests use filesystem-valid Windows fixture names in place of Unix-only newline/asterisk names and do not assert POSIX permission bits on Windows. The same staging, rename, Stash and ignore behavior remains tested; Unix cases retain their original filenames. This is not a claim of support for filenames forbidden by the target OS.
+- The [Release workflow](https://github.com/yueseqaz/SakuraGit/actions/workflows/release.yml) pins the source commit, checks tag/version consistency, requires every test/build job to pass, and validates all seven package filenames before publishing a draft with checksums. Already published releases are not overwritten. Exact run results remain available in the linked workflows; workflow configuration alone is not a passing run.
+- Windows/Linux interactive GUI, installers on clean end-user machines, online authentication, and every architecture/device remain separate manual verification gaps. macOS is ad-hoc signed without notarization; Windows installers are unsigned. No in-app updater is enabled.
+
 ## SakuraGit Rename And Publication (0.5.2)
 
 - `npm test`: Go tests pass with the race detector; all 78 frontend tests across 17 files pass. `go vet ./...` passes.
@@ -106,7 +114,7 @@ Browser checks use explicitly labeled demo data, not access to local Git. Native
 ## Not Verified
 
 - v0.4.0 foreground periodic-refresh and subsequent native push-dialog continuation in this occluded automation environment (the default full smoke cannot complete phase 6). Existing change-token integration tests pass; earlier v0.3.1 native verification remains historical, not a v0.4.0 pass.
-- Windows and Linux packaging/runtime.
+- Windows and Linux interactive GUI/runtime on end-user machines; all ARM64 Windows/Linux devices. Cloud packaging/test status is tracked in the workflows above.
 - Live GitHub/GitLab authentication, credential dialogs or signed commits.
 - Real large production repositories and unusual non-UTF-8 filenames (synthetic 10k/2.5k fixtures are covered).
 - Apple Developer ID signing and notarization.
