@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -19,7 +20,7 @@ func TestSessionAtomicRoundTripAndMalformedRecovery(t *testing.T) {
 		t.Fatalf("lost session: %+v", got)
 	}
 	info, _ := os.Stat(path)
-	if info.Mode().Perm() != 0600 {
+	if runtime.GOOS != "windows" && info.Mode().Perm() != 0600 {
 		t.Fatalf("session permissions: %v", info.Mode())
 	}
 	s.View = "unknown"

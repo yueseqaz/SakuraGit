@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -20,6 +21,14 @@ func git(t *testing.T, dir string, args ...string) string {
 	return strings.TrimSpace(string(out))
 }
 
+// Windows cannot create newline or wildcard characters in file names.
+func fixtureFilename(name string) string {
+	if runtime.GOOS == "windows" {
+		return strings.NewReplacer("\n", "-", "*", "").Replace(name)
+	}
+	return name
+}
+
 func fixture(t *testing.T, committed bool) (*Engine, string) {
 	t.Helper()
 	root := t.TempDir()
@@ -27,6 +36,7 @@ func fixture(t *testing.T, committed bool) (*Engine, string) {
 	git(t, root, "config", "user.name", "SakuraGit Test")
 	git(t, root, "config", "user.email", "sakuragit@example.invalid")
 	git(t, root, "config", "commit.gpgsign", "false")
+	git(t, root, "config", "core.autocrlf", "false")
 	write(t, root, "hello.txt", "hello\n")
 	if committed {
 		git(t, root, "add", ".")
@@ -89,7 +99,7 @@ func TestTextContainingBinaryMarkerIsStillText(t *testing.T) {
 func TestUnbornAndLiteralPaths(t *testing.T) {
 	e, root := fixture(t, false)
 	ctx := context.Background()
-	name := "odd\nfile [1] 中文.txt"
+	name := fixtureFilename("odd\nfile [1] 中文.txt")
 	write(t, root, name, "new file\n")
 	write(t, root, "odd1.txt", "must not stage\n")
 	if _, err := e.Stage(ctx, root, []string{name}, true); err != nil {

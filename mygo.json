@@ -7,5 +7,16 @@
   "buildCommand": "npm run build:web",
   "frontendDist": "dist",
   "bindings": "src/mygo.ts",
-  "out": "build"
+  "out": "build",
+  "linux": {
+    "command": "sakuragit",
+    "categories": [
+      "Development",
+      "RevisionControl"
+    ],
+    "comment": "A lightweight visual Git desktop client",
+    "depends": [
+      "git"
+    ]
+  }
 }

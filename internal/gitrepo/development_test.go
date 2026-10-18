@@ -293,7 +293,8 @@ func TestStashPreservesLiteralNamesAndDoesNotPolluteHistory(t *testing.T) {
 	git(t, root, "add", ".")
 	git(t, root, "commit", "-m", "literal name")
 	write(t, root, "[task].txt", "after\n")
-	write(t, root, "new\nfile.txt", "untracked\n")
+	untracked := fixtureFilename("new\nfile.txt")
+	write(t, root, untracked, "untracked\n")
 	if _, err := e.SaveStash(ctx, root, "literal paths", true); err != nil {
 		t.Fatal(err)
 	}
@@ -304,7 +305,7 @@ func TestStashPreservesLiteralNamesAndDoesNotPolluteHistory(t *testing.T) {
 	if _, err := e.RestoreStash(ctx, root, s.Stashes[0].Hash, false); err != nil {
 		t.Fatal(err)
 	}
-	for path, want := range map[string]string{"[task].txt": "after\n", "new\nfile.txt": "untracked\n"} {
+	for path, want := range map[string]string{"[task].txt": "after\n", untracked: "untracked\n"} {
 		got, err := os.ReadFile(filepath.Join(root, path))
 		if err != nil || string(got) != want {
 			t.Fatalf("%q: %q %v", path, got, err)

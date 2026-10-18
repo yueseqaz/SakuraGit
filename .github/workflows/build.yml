@@ -1,0 +1,112 @@
+name: Cross-platform Build
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Exact source commit to test and build
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-latest]
+    defaults:
+      run:
+        shell: bash
+    env:
+      GIT_TERMINAL_PROMPT: '0'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Check release metadata and tooling tests
+        run: |
+          node scripts/release-tools.mjs check-version
+          node --test scripts/release-tools.test.mjs
+      - run: npm ci
+      - name: Frontend tests and production assets
+        run: |
+          npm run test:web
+          npm run build:web
+      - name: Go race tests
+        run: go test -race -count=1 -timeout=15m ./...
+      - name: Go vet
+        run: go vet ./...
+
+  build:
+    name: Package (${{ matrix.platform }})
+    needs: test
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            platform: darwin/universal
+            artifact: macos-universal
+          - os: windows-latest
+            platform: windows/amd64
+            artifact: windows-amd64
+          - os: windows-latest
+            platform: windows/arm64
+            artifact: windows-arm64
+          - os: ubuntu-24.04
+            platform: linux/amd64
+            artifact: linux-amd64
+          - os: ubuntu-24.04
+            platform: linux/arm64
+            artifact: linux-arm64
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Build native package on the GitHub runner
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: npm run build -- --platform "$PLATFORM"
+      - name: Verify macOS universal binary and signature
+        if: runner.os == 'macOS'
+        run: |
+          lipo -verify_arch arm64 x86_64 build/darwin-universal/SakuraGit.app/Contents/MacOS/SakuraGit
+          codesign --verify --deep --strict build/darwin-universal/SakuraGit.app
+      - name: Collect and validate release packages
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: node scripts/release-tools.mjs collect "$PLATFORM"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sakuragit-${{ matrix.artifact }}
+          path: release-assets/*
+          if-no-files-found: error
+          retention-days: 14

@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -105,21 +106,25 @@ func TestWorkflowBranchSafetyAndTracking(t *testing.T) {
 
 func TestWorkflowStaleStateAndExactIgnorePaths(t *testing.T) {
 	e, root := fixture(t, true)
-	write(t, root, "literal [1]*.txt", "keep me\n")
-	write(t, root, "literal 11x.txt", "also keep\n")
+	name, other := fixtureFilename("literal [1]*.txt"), "literal 11x.txt"
+	if runtime.GOOS == "windows" {
+		other = "literal 1.txt"
+	}
+	write(t, root, name, "keep me\n")
+	write(t, root, other, "also keep\n")
 	w, _ := e.Workflow(context.Background(), root)
 	git(t, root, "branch", "external")
-	if _, err := e.IgnoreFile(context.Background(), root, "literal [1]*.txt", w.Revision); err == nil {
+	if _, err := e.IgnoreFile(context.Background(), root, name, w.Revision); err == nil {
 		t.Fatal("accepted stale revision")
 	}
 	w, _ = e.Workflow(context.Background(), root)
-	if _, err := e.IgnoreFile(context.Background(), root, "literal [1]*.txt", w.Revision); err != nil {
+	if _, err := e.IgnoreFile(context.Background(), root, name, w.Revision); err != nil {
 		t.Fatal(err)
 	}
-	if got := git(t, root, "ls-files", "--others", "--exclude-standard"); strings.Contains(got, "literal [1]") || !strings.Contains(got, "literal 11x") {
+	if got := git(t, root, "ls-files", "--others", "--exclude-standard"); strings.Contains(got, "literal [1]") || !strings.Contains(got, other) {
 		t.Fatalf("ignore was not literal: %s", got)
 	}
-	if _, err := os.Stat(filepath.Join(root, "literal [1]*.txt")); err != nil {
+	if _, err := os.Stat(filepath.Join(root, name)); err != nil {
 		t.Fatal("ignore removed file")
 	}
 	if git(t, root, "diff", "--cached", "--name-only") != "" {

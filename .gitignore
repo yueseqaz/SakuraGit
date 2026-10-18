@@ -12,3 +12,5 @@ build/
 *.key
 *.p12
 *.pfx
+release-assets/
+mygo_windows_*.syso
