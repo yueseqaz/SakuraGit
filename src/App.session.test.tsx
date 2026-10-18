@@ -82,12 +82,13 @@ it('rehydrates the selected file and draft, then caches edits immediately', asyn
   expect((screen.getByLabelText('提交详细说明') as HTMLTextAreaElement).value).toBe(
     'unfinished body',
   );
-  expect(Git.diff).toHaveBeenLastCalledWith(saved.root, saved.path, false);
+  await waitFor(() => expect(Git.diff).toHaveBeenLastCalledWith(saved.root, saved.path, false));
   fireEvent.change(input, { target: { value: 'updated draft' } });
   expect(readSessionCache().drafts[saved.root].title).toBe('updated draft');
-  await waitFor(() => expect(Git.saveSession).toHaveBeenCalled());
-  expect(vi.mocked(Git.saveSession).mock.lastCall?.[0].drafts[saved.root].title).toBe(
-    'updated draft',
+  await waitFor(() =>
+    expect(vi.mocked(Git.saveSession).mock.lastCall?.[0].drafts[saved.root].title).toBe(
+      'updated draft',
+    ),
   );
 });
 it('opens explicit CLI paths instead of a newer cached repository without mixing drafts', async () => {
