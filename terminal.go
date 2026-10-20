@@ -126,11 +126,17 @@ func (g *Git) showTerminal(root, id string) {
 				g.terminals.mu.Unlock()
 				return
 			}
-			if s := g.terminals.sessions[id]; s != nil {
+			s := g.terminals.sessions[id]
+			if s != nil {
 				s.focus.Store(true)
 				g.terminals.active[root] = id
 			}
 			g.terminals.mu.Unlock()
+			if s != nil && s.term != nil {
+				// A palette change during shell startup must not leave a stale theme.
+				light, dark := terminalPalette(d.palette)
+				s.term.SetTheme(light, dark)
+			}
 			// A delayed shell startup must never switch the visible repository back.
 			if d.root == root {
 				d.visible = true

@@ -505,6 +505,29 @@
     min-width: 100px;
   }
 }
+@media (min-width: 761px) and (max-height: 620px) {
+  .sidebar {
+    overflow-y: auto;
+    padding-top: 12px;
+  }
+  .sidebar > * {
+    flex-shrink: 0;
+  }
+  .sidebar-scroll {
+    flex: 1 0 90px;
+    margin-top: 14px;
+  }
+  .repository-picker {
+    margin-bottom: 14px;
+  }
+  .main-nav {
+    gap: 1px;
+  }
+  .main-nav .nav-item {
+    padding-block: 8px;
+    min-height: 32px;
+  }
+}
 @media (max-width: 760px) {
   .app-shell {
     min-height: 100dvh;

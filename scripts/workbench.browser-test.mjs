@@ -201,6 +201,7 @@ try {
     await page.close();
   }
   for (const viewport of [
+    { width: 1440, height: 420 },
     { width: 900, height: 620 },
     { width: 390, height: 844 },
   ]) {
@@ -212,10 +213,17 @@ try {
       `viewport ${viewport.width} overflows`,
     );
     assert.deepEqual(failures, []);
+    if (viewport.height === 420) {
+      await page.getByLabel('设置与外观').scrollIntoViewIfNeeded();
+      assert.ok(
+        await page.evaluate(() => document.querySelector('.sidebar').scrollTop > 0),
+        'short docked viewport must keep settings reachable',
+      );
+    }
     await page.close();
   }
   console.log(
-    'Workbench UI fixture contracts and 13 visual snapshots passed. Native PTYs are tested separately.',
+    'Workbench UI fixture contracts and 14 visual snapshots passed. Native PTYs are tested separately.',
   );
 } finally {
   await browser?.close();
