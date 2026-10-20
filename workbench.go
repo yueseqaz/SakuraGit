@@ -29,6 +29,7 @@ type desktopWorkbench struct {
 	palette           string
 	saveMu            sync.Mutex
 	saveTimer         *time.Timer
+	saveVersion       uint64
 }
 
 func newDesktopWorkbench(g *Git, background, stateKey string, p Preferences) *mygo.Window {
@@ -86,15 +87,37 @@ func (d *desktopWorkbench) setRoot(root string) {
 
 func (d *desktopWorkbench) persistSplit() {
 	value := d.percent
+	dir, err := mygo.App.Path(mygo.PathUserData)
+	if err != nil {
+		return
+	}
 	d.saveMu.Lock()
 	defer d.saveMu.Unlock()
+	d.saveVersion++
+	version := d.saveVersion
 	if d.saveTimer != nil {
 		d.saveTimer.Stop()
 	}
 	d.saveTimer = time.AfterFunc(400*time.Millisecond, func() {
-		if dir, err := mygo.App.Path(mygo.PathUserData); err == nil {
+		d.saveMu.Lock()
+		defer d.saveMu.Unlock()
+		if version != d.saveVersion {
+			return
+		}
+		{
 			data, _ := json.Marshal(value)
-			_ = os.WriteFile(filepath.Join(dir, "terminal-layout.json"), data, 0600)
+			f, err := os.CreateTemp(dir, ".terminal-layout-")
+			if err != nil {
+				return
+			}
+			defer os.Remove(f.Name())
+			if _, err = f.Write(data); err != nil {
+				f.Close()
+				return
+			}
+			if err = f.Close(); err == nil {
+				_ = os.Rename(f.Name(), filepath.Join(dir, "terminal-layout.json"))
+			}
 		}
 	})
 }
@@ -159,7 +182,12 @@ func (d *desktopWorkbench) terminalView(c *ui.Context) {
 		default:
 		}
 	}
-	sort.Slice(sessions, func(i, j int) bool { return sessions[i].id < sessions[j].id })
+	sort.Slice(sessions, func(i, j int) bool {
+		if sessions[i].sequence == sessions[j].sequence {
+			return sessions[i].id < sessions[j].id
+		}
+		return sessions[i].sequence < sessions[j].sequence
+	})
 	for _, s := range sessions {
 		if g.terminals.active[d.root] == s.id {
 			active = s

@@ -103,6 +103,9 @@ func TestConflictThreeWaySaveAndBackup(t *testing.T) {
 	if err != nil || d.Ours != "main\n" || d.Theirs != "feature\n" || d.Base == "" {
 		t.Fatalf("missing three-way content: %+v %v", d, err)
 	}
+	if _, err = e.Stage(ctx, root, []string{"hello.txt"}, true); err == nil {
+		t.Fatal("ordinary staging bypassed conflict marker checks")
+	}
 	if _, err = e.SaveConflict(ctx, root, "hello.txt", d.Revision, d.Result); err == nil {
 		t.Fatal("accepted conflict markers")
 	}

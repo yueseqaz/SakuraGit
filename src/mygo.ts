@@ -364,6 +364,9 @@ export const Git = {
   toggleTerminal(root: string): Promise<void> {
     return call("Git.ToggleTerminal", root);
   },
+  workbenchModal(open: boolean): Promise<void> {
+    return call("Git.WorkbenchModal", open);
+  },
   workflow(root: string): Promise<WorkflowInfo> {
     return call("Git.Workflow", root);
   },

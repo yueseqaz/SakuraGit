@@ -19,9 +19,11 @@ type repositoryTerminals struct {
 	sessions map[string]*repositoryTerminal
 	active   map[string]string
 	closing  bool
+	sequence uint64
 }
 type repositoryTerminal struct {
 	id, root string
+	sequence uint64
 	ready    chan struct{}
 	win      *mygo.Window
 	term     *terminal.Terminal
@@ -74,7 +76,8 @@ func (g *Git) createRepositoryTerminal(ctx context.Context, root string, fresh b
 		g.terminals.mu.Unlock()
 		return errors.New("终端工作台尚未就绪")
 	}
-	s := &repositoryTerminal{id: rand.Text(), root: root, ready: make(chan struct{}), win: g.desktop.win}
+	g.terminals.sequence++
+	s := &repositoryTerminal{id: rand.Text(), root: root, sequence: g.terminals.sequence, ready: make(chan struct{}), win: g.desktop.win}
 	if g.terminals.sessions == nil {
 		g.terminals.sessions = map[string]*repositoryTerminal{}
 	}
@@ -83,7 +86,16 @@ func (g *Git) createRepositoryTerminal(ctx context.Context, root string, fresh b
 	}
 	g.terminals.sessions[s.id] = s
 	g.terminals.mu.Unlock()
-	term, err := terminal.New(repositoryTerminalOptions(root))
+	opts := repositoryTerminalOptions(root)
+	opts.OnKey = func(mods ui.Modifiers, key ui.Key) bool {
+		if terminalDockShortcut(mods, key) {
+			g.desktop.hide()
+			g.desktop.win.Invalidate()
+			return true
+		}
+		return false
+	}
+	term, err := terminal.New(opts)
 	if err == nil {
 		s.term = term
 		p := loadPreferences()
@@ -100,6 +112,10 @@ func (g *Git) createRepositoryTerminal(ctx context.Context, root string, fresh b
 	g.showTerminal(root, s.id)
 	go func() { <-term.Done(); s.win.Invalidate() }()
 	return nil
+}
+
+func terminalDockShortcut(mods ui.Modifiers, key ui.Key) bool {
+	return mods == ui.Cmd && key == ui.KeyBackquote
 }
 
 func (g *Git) showTerminal(root, id string) {

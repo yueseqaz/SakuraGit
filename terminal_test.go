@@ -134,7 +134,7 @@ func TestTerminalProcessHelper(t *testing.T) {
 	os.Exit(7)
 }
 
-func newFixtureTerminal(t *testing.T) *terminal.Terminal {
+func newFixtureTerminal(t *testing.T, configure ...func(*terminal.Options)) *terminal.Terminal {
 	t.Helper()
 	bin, err := os.Executable()
 	if err != nil {
@@ -142,6 +142,9 @@ func newFixtureTerminal(t *testing.T) *terminal.Terminal {
 	}
 	root := t.TempDir()
 	opts := repositoryTerminalOptions(root)
+	for _, fn := range configure {
+		fn(&opts)
+	}
 	opts.Command = []string{bin, "-test.run=^TestTerminalProcessHelper$"}
 	opts.Env = append(opts.Env, "SAKURAGIT_TERMINAL_HELPER=1", "SAKURAGIT_TERMINAL_ROOT="+root)
 	term, err := terminal.New(opts)
@@ -161,6 +164,34 @@ func newFixtureTerminal(t *testing.T) *terminal.Terminal {
 		}
 	}
 	return term
+}
+
+func TestDockShortcutIsConsumedBeforeReachingThePTY(t *testing.T) {
+	taken := 0
+	term := newFixtureTerminal(t, func(opts *terminal.Options) {
+		opts.OnKey = func(mods ui.Modifiers, key ui.Key) bool {
+			if terminalDockShortcut(mods, key) {
+				taken++
+				return true
+			}
+			return false
+		}
+	})
+	tt := ui.NewTester(func(c *ui.Context) { terminal.View(c, term).Fill().AutoFocus() }, 640, 300)
+	tt.Key(ui.Cmd, ui.KeyBackquote)
+	if taken != 1 {
+		t.Fatal("dock shortcut was not intercepted")
+	}
+	tt.Type("fixture-input")
+	tt.Key(0, ui.KeyEnter)
+	select {
+	case <-term.Done():
+	case <-time.After(20 * time.Second):
+		t.Fatal("fixture input did not complete")
+	}
+	if term.ExitCode() != 7 {
+		t.Fatal("dock shortcut leaked into the shell input", term.Text())
+	}
 }
 
 func TestTerminalPTYInputUnicodeResizeAndExit(t *testing.T) {

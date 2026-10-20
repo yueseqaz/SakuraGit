@@ -88,7 +88,12 @@ export function DiffPanel({
   const navigate = (direction: number) => {
     const hunks = scroll.current?.querySelectorAll<HTMLElement>('.diff-hunk');
     if (!hunks?.length) return;
-    const index = (currentHunk + direction + hunks.length) % hunks.length;
+    const index =
+      currentHunk < 0
+        ? direction > 0
+          ? 0
+          : hunks.length - 1
+        : (currentHunk + direction + hunks.length) % hunks.length;
     hunks[index].scrollIntoView?.({ block: 'center', behavior: 'auto' });
     setLocation({ key: diffKey, index });
   };

@@ -422,6 +422,9 @@ func (e *Engine) Stage(ctx context.Context, root string, paths []string, staged 
 		if !ok {
 			return Result{}, errors.New("文件状态已变化，请刷新后重试")
 		}
+		if file.Conflicted {
+			return Result{}, errors.New("冲突文件不能通过普通暂存操作标记解决，请使用三方合并或开发工具的标记已解决")
+		}
 		args = append(args, file.Path)
 		if file.OldPath != "" && (!staged || file.Worktree == "R") {
 			args = append(args, file.OldPath)

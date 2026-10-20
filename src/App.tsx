@@ -1821,7 +1821,7 @@ export default function App() {
                   </span>
                 </div>
                 <p className="guide-limit">
-                  冲突可在开发工具中调用外部编辑器、标记解决并继续或中止流程；不提供内置三方合并编辑、交互式
+                  普通文本冲突可在工作区使用三方合并，也可在开发工具中调用外部编辑器并继续或中止流程。不提供交互式
                   Rebase、强推或工作树创建。SSH 与凭据沿用系统 Git
                   配置；如认证需要交互，请先在终端完成。
                 </p>
@@ -1889,6 +1889,7 @@ function FileGroup({
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const filtered = files.filter((file) => file.path.toLowerCase().includes(search.toLowerCase()));
+  const stageable = files.filter((file) => !file.conflicted);
   const selectedIndex =
     selection?.kind === 'file' && selection.staged === staged
       ? filtered.findIndex((file) => file.path === selection.path)
@@ -1905,9 +1906,9 @@ function FileGroup({
         <button
           className="icon-button"
           aria-label={staged ? '取消暂存全部' : '暂存全部'}
-          title={staged ? '取消暂存全部' : '暂存全部'}
-          disabled={disabled || !files.length}
-          onClick={() => onStage(files, !staged)}
+          title={staged ? '取消暂存全部' : '暂存全部（不包含冲突文件）'}
+          disabled={disabled || !stageable.length}
+          onClick={() => onStage(stageable, !staged)}
         >
           {staged ? <Minus size={15} /> : <Plus size={15} />}
         </button>
@@ -1949,8 +1950,14 @@ function FileGroup({
                 <button
                   className="file-stage"
                   aria-label={`${staged ? '取消暂存' : '暂存'} ${file.path}`}
-                  title={staged ? '取消暂存' : '暂存文件'}
-                  disabled={disabled}
+                  title={
+                    file.conflicted
+                      ? '先在三方合并或开发工具中解决冲突'
+                      : staged
+                        ? '取消暂存'
+                        : '暂存文件'
+                  }
+                  disabled={disabled || file.conflicted}
                   onClick={() => onStage([file], !staged)}
                 >
                   {staged ? <Minus size={14} /> : <Plus size={14} />}
