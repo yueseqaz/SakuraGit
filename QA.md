@@ -1,6 +1,16 @@
 # Verification
 
-Latest verification: 2026-10-19, macOS Apple Silicon. Earlier version sections are retained as historical records, including the former Gitlane product name and its old build paths.
+Latest verification work: 2026-10-20, GitHub-hosted macOS, Windows and Linux. Earlier version sections are retained as historical records, including the former Gitlane product name and its old build paths.
+
+## Built-in Terminal (0.5.3)
+
+- All builds and test runs for this change run on GitHub, not the developer machine. The [initial terminal CI run](https://github.com/yueseqaz/SakuraGit/actions/runs/39364446396) passed all three OS test jobs and all five package jobs. Subsequent UI/lifecycle refinements must pass the same workflow before release.
+- Three frontend tests cover the current repository and command-free IPC arguments, duplicate startup requests, failure reporting, browser-preview refusal, busy state and modal shortcut protection. Total frontend suite: 81 tests.
+- Real PTY/ConPTY tests launch only a self-created helper program in a temporary fixture directory: Unicode and ANSI output, initial working directory, resize, interactive stdin, exit codes and hanging up an attached process. No user repository or remote is accessed.
+- Lifecycle tests cover waiting for actual process exit, cancellation/deadlines, unopened-repository and smoke-mode refusal, pending-session deduplication, the eight-session limit and a pending terminal confirmation not leaving Git operations locked.
+- The native view is also tested with MyGo's in-memory `ui.NewTester`: initial focus, explicit clipboard action, light/dark and minimum-size rendering, typed input through to the PTY, and output retained after exit. Render snapshots are uploaded as `terminal-ui-*` CI artifacts; these are headless native-view renders, not screenshots of real desktop windows.
+- Release collection requires the correct bundled Ghostty library and checks Windows/Linux machine types. macOS verifies both architectures of the application and the dylib, plus the bundle's ad-hoc signature. macOS minimum deployment version is 13.0.
+- Manual verification still required: real OS-window focus/IME and accessibility, desktop clipboard integration and context menus, SSH/password prompts, Ctrl+C behavior in different shells, and shutdown dialogs with long-running development servers. Windows/Linux ARM64 are cross-compiled, not ARM-device tested. Detached services are not guaranteed to terminate with the terminal.
 
 ## GitHub-hosted Cross-platform Pipeline (0.5.2)
 

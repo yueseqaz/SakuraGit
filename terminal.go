@@ -62,15 +62,7 @@ func (g *Git) openRepositoryTerminal(ctx context.Context, root string) error {
 	g.terminals.sessions[root] = s
 	g.terminals.mu.Unlock()
 	defer close(s.ready)
-	light, dark := terminal.LightTheme(), terminal.DarkTheme()
-	light.Background, light.Foreground = ui.Hex("#f3f6f8"), ui.Hex("#263b49")
-	dark.Background, dark.Foreground = ui.Hex("#17212a"), ui.Hex("#d8e4eb")
-	term, err := terminal.New(terminal.Options{
-		Dir: root, Env: []string{"GIT_TERMINAL_PROMPT=1"},
-		Font: terminal.Font{Size: 13}, Scrollback: 10 << 20,
-		Theme: light, DarkTheme: dark,
-		ClipboardRead: terminal.ClipboardDeny, NoClipboardWrite: true,
-	})
+	term, err := terminal.New(repositoryTerminalOptions(root))
 	if err != nil {
 		g.terminals.mu.Lock()
 		delete(g.terminals.sessions, root)
@@ -82,28 +74,7 @@ func (g *Git) openRepositoryTerminal(ctx context.Context, root string) error {
 		Title: "SakuraGit · 终端 · " + filepath.Base(root),
 		Width: 1080, Height: 700, MinWidth: 640, MinHeight: 400,
 		StateKey: "repository-terminal",
-		Content: ui.View(func(c *ui.Context) {
-			theme := ui.LightTheme()
-			if mygo.Theme.IsDark() {
-				theme = ui.DarkTheme()
-			}
-			theme.Accent = ui.Hex("#668ba3")
-			c.SetTheme(theme)
-			ui.Column(c).Fill().Children(func() {
-				ui.Row(c).Padding(10).Gap(12).Children(func() {
-					ui.Text(c, root).Font("monospace").SingleLine().Grow(1)
-					if ui.Button(c, "复制路径").Clicked() {
-						mygo.Clipboard.WriteText(root)
-					}
-				})
-				terminal.View(c, term).Grow(1).FillWidth().AutoFocus()
-				status := "真实 Shell · 命令不受 Git 按钮限制 · Ctrl+C 中断 · 右键复制/粘贴 · 按住 Cmd/Ctrl 滚轮缩放"
-				if !terminalRunning(term.Done()) {
-					status = fmt.Sprintf("Shell 已退出（%d）· 输出保留在本窗口 · 关闭后可重新打开", term.ExitCode())
-				}
-				ui.Text(c, status).FontSize(11).Padding(8)
-			})
-		}),
+		Content:  ui.View(repositoryTerminalView(root, term)),
 	})
 	s.win.OnClose(func(e *mygo.CloseEvent) {
 		if terminalRunning(term.Done()) {
@@ -144,6 +115,40 @@ func (g *Git) openRepositoryTerminal(ctx context.Context, root string) error {
 	return nil
 }
 
+func repositoryTerminalOptions(root string) terminal.Options {
+	light, dark := terminal.LightTheme(), terminal.DarkTheme()
+	light.Background, light.Foreground = ui.Hex("#f3f6f8"), ui.Hex("#263b49")
+	dark.Background, dark.Foreground = ui.Hex("#17212a"), ui.Hex("#d8e4eb")
+	return terminal.Options{
+		Dir: root, Env: []string{"GIT_TERMINAL_PROMPT=1"},
+		Font: terminal.Font{Size: 13}, Scrollback: 10 << 20,
+		Theme: light, DarkTheme: dark,
+		ClipboardRead: terminal.ClipboardDeny, NoClipboardWrite: true,
+	}
+}
+
+func repositoryTerminalView(root string, term *terminal.Terminal) func(*ui.Context) {
+	return func(c *ui.Context) {
+		theme := *c.Theme()
+		theme.Accent = ui.Hex("#668ba3")
+		c.SetTheme(&theme)
+		ui.Column(c).Fill().Children(func() {
+			ui.Row(c).Padding(10).Gap(12).Children(func() {
+				ui.Text(c, root).Font("monospace").SingleLine().Grow(1)
+				if ui.Button(c, "复制路径").Clicked() {
+					c.WriteClipboard(root)
+				}
+			})
+			terminal.View(c, term).Grow(1).FillWidth().AutoFocus()
+			status := "真实 Shell · 命令不受 Git 按钮限制 · Ctrl+C 中断 · 右键复制/粘贴 · 按住 Cmd/Ctrl 滚轮缩放"
+			if !terminalRunning(term.Done()) {
+				status = fmt.Sprintf("Shell 已退出（%d）· 输出保留在本窗口 · 关闭后可重新打开", term.ExitCode())
+			}
+			ui.Text(c, status).FontSize(11).Padding(8)
+		})
+	}
+}
+
 func terminalRunning(done <-chan struct{}) bool {
 	select {
 	case <-done:
@@ -178,6 +183,9 @@ func (g *Git) protectTerminals(win *mygo.Window, quit bool) bool {
 	for _, s := range g.terminals.sessions {
 		if s.prompt.Load() {
 			g.terminals.mu.Unlock()
+			g.operationMu.Lock()
+			g.exitApproved = false
+			g.operationMu.Unlock()
 			return true
 		}
 		sessions = append(sessions, s)
