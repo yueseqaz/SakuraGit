@@ -318,7 +318,7 @@ export function WorkflowPanel({
                 打开项目
               </button>
               <button className="button" onClick={() => void open('', 'terminal')}>
-                打开终端
+                内置终端
               </button>
               <button className="button" onClick={() => void open('', 'folder')}>
                 打开目录

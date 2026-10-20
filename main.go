@@ -41,6 +41,7 @@ type Git struct {
 	operation    *operationJob
 	exitPrompt   bool
 	exitApproved bool
+	terminals    repositoryTerminals
 }
 
 func (g *Git) Bootstrap() (Startup, error) {
@@ -183,7 +184,7 @@ func main() {
 		log.Fatal("--smoke requires --repo")
 	}
 	mygo.App.SetName("SakuraGit")
-	mygo.App.SetVersion("0.5.2")
+	mygo.App.SetVersion("0.5.3")
 	// Keep the pre-rename data location so existing sessions and drafts survive.
 	if dir, err := mygo.App.Path(mygo.PathAppData); err == nil {
 		mygo.App.SetPath(mygo.PathUserData, filepath.Join(dir, "Gitlane"))
@@ -194,7 +195,7 @@ func main() {
 	mygo.Bind(service)
 	if !*smoke {
 		mygo.App.OnBeforeQuit(func(e *mygo.QuitEvent) {
-			if service.protectExit(mygo.FocusedWindow(), true) {
+			if service.protectExit(mygo.FocusedWindow(), true) || service.protectTerminals(mygo.FocusedWindow(), true) {
 				e.PreventDefault()
 			}
 		})
@@ -222,7 +223,7 @@ func main() {
 		})
 		if !*smoke {
 			win.OnClose(func(e *mygo.CloseEvent) {
-				if service.protectExit(win, false) {
+				if service.protectExit(win, false) || service.protectTerminals(win, false) {
 					e.PreventDefault()
 				}
 			})

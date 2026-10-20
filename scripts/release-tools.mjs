@@ -51,8 +51,21 @@ export function collect(root, target) {
   const names = assetNames(version, target);
   const [os] = target.split('/');
   const stage = join(root, 'build', target.replace('/', '-'));
+  const library = os === 'darwin' ? 'libghostty-vt.dylib' : os === 'windows' ? 'ghostty-vt.dll' : 'libghostty-vt.so';
+  const libraries = [];
+  const findLibrary = (directory) => {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const path = join(directory, entry.name);
+      if (entry.isDirectory()) findLibrary(path);
+      else if (entry.isFile() && entry.name === library) libraries.push(path);
+    }
+  };
+  findLibrary(stage);
+  if (libraries.length !== 1) throw new Error(`Expected exactly one bundled ${library}, found ${libraries.length}`);
+  if (!statSync(libraries[0]).size) throw new Error('Terminal library is empty');
   if (os !== 'darwin') {
     verifyBinary(readFileSync(join(stage, os === 'windows' ? 'SakuraGit.exe' : 'sakuragit')), target);
+    verifyBinary(readFileSync(libraries[0]), target);
   }
   const files = readdirSync(stage);
   const suffixes = os === 'darwin' ? ['.dmg'] : os === 'windows' ? ['.exe'] : ['.deb', '.tar.gz'];

@@ -8,7 +8,7 @@
 
 SakuraGit 是一个使用 **MyGo + Go + React + TypeScript** 构建的轻量 Git 桌面客户端。它用系统 WebView 渲染界面，通过系统 Git 操作本地仓库，**不捆绑 Chromium**。雾霾蓝主题、可拖动面板和专注 Diff 阅读，让日常提交、代码审阅和分支操作更直观。
 
-> 当前版本：**0.5.2，早期开发阶段**。已在 macOS Apple Silicon 上构建和测试，仍有明确的功能边界；不代表已完成生产环境或跨平台验证。目前界面以中文为主，英文文档不代表已实现英文界面。
+> 当前版本：**0.5.3，早期开发阶段**。已在 macOS Apple Silicon 上构建和测试，仍有明确的功能边界；不代表已完成生产环境或跨平台验证。目前界面以中文为主，英文文档不代表已实现英文界面。
 
 ![SakuraGit 工作区](docs/screenshots/workspace.png)
 
@@ -25,6 +25,7 @@ SakuraGit 是一个使用 **MyGo + Go + React + TypeScript** 构建的轻量 Git
 | 同步 | Fetch、仅快进 Pull、非强制 Push、首次推送设置 upstream；执行前显示真实目标与确认 |
 | Stash | 保存、查看、恢复和删除；可包含未跟踪文件、恢复暂存状态；恢复后保留原记录 |
 | 开发工具 | 冲突文件定位、外部编辑器 / 合并工具、检测残留冲突标记、继续 / 中止 Git 流程 |
+| 内置终端 | MyGo + Ghostty 原生终端独立窗口；仓库目录启动、交互式 Shell、颜色和中文、滚动、复制粘贴及缩放；关闭与退出确认 |
 | 连接与身份 | 管理远程 Fetch / Push 地址、查看 Git / 认证相关配置、设置仓库级姓名和邮箱 |
 | 阅读与布局 | 雾霾蓝 / 石墨灰，浅色 / 深色 / 跟随系统；可拖动面板、比例记忆、会话与草稿恢复 |
 | 操作状态 | 克隆与同步进度、耗时、取消、中文错误指引，以及写操作期间的退出保护 |
@@ -44,6 +45,18 @@ SakuraGit 是一个使用 **MyGo + Go + React + TypeScript** 构建的轻量 Git
 | Linux | x64 / ARM64，分别提供 `.deb` 和 `.tar.gz` |
 
 所有包均需系统 Git。Windows 需要 WebView2 Runtime；Linux 需要图形桌面、GTK 3 和 WebKitGTK 4.1，`.deb` 会声明依赖。macOS 仅 ad-hoc 签名、未公证，Windows 未做 Authenticode 签名，系统可能显示安全警告。**跨平台构建通过不等于所有系统、架构和图形交互均已实机验证**，Windows / Linux ARM64 使用同系统 x64 runner 交叉编译。下载后可使用附件 `SHA256SUMS` 核对文件。
+
+## 内置终端
+
+打开仓库后，点击右上角 **终端**、开发工具中的 **内置终端**，或按 **Ctrl/Cmd + 反引号**。每个仓库保留一个会话，再次打开会聚焦原窗口，最多同时保留 8 个仓库终端。
+
+- 初始目录为打开的仓库；macOS / Linux 使用用户的登录 Shell，Windows 优先使用 PowerShell，找不到时回退到系统命令解释器。用户 Shell 启动配置仍可能改变目录或执行自己的脚本。
+- 支持交互输入、ANSI 颜色、中文、窗口缩放、滚动和右键复制粘贴；使用 `Ctrl+C` 中断命令，按住 Cmd/Ctrl 滚轮调整字号。
+- 关闭运行中的会话、关闭工作区或退出应用时，默认保留会话，确认后才挂断终端并等待进程结束。Shell 自行退出后保留输出，可关闭窗口再重新打开。已脱离终端的后台进程不保证被结束；不会自动回滚命令。
+- **终端是可执行任意命令的真实 Shell，不受 Git 按钮的安全限制。** 应用不自动发送命令或执行仓库脚本；用户自己的 Shell 配置仍会正常执行。终端协议的剪贴板读写默认被禁止，手动复制粘贴正常。应用不保存终端内容，但 Shell 自身可能保存历史。
+- 返回主窗口时会重新读取仓库状态。终端与其他 Git 客户端同样可能并发修改仓库，执行写操作前请核对状态。
+
+终端运行库随安装包分发，不需要安装 Ghostty。此版本最低需要 **macOS 13**、**Windows 10 1809**；Linux 的终端库需要 glibc 2.28+，主窗口仍需要 GTK 3 / WebKitGTK 4.1。本功能暂不支持主窗口底部面板、终端标签页、持久会话恢复和 Shell 选择器。
 
 ## 快速开始
 
@@ -88,7 +101,7 @@ npm run build
 
 ```text
 build/darwin-arm64/SakuraGit.app
-build/darwin-arm64/SakuraGit 0.5.2 arm64.dmg
+build/darwin-arm64/SakuraGit 0.5.3 arm64.dmg
 ```
 
 ```sh
@@ -150,8 +163,8 @@ scripts/native-smoke.sh build/darwin-arm64/SakuraGit.app/Contents/MacOS/SakuraGi
 发布新版本时，更新版本号和发布说明，先确认 `main` 的 CI 通过，再执行：
 
 ```sh
-git tag v0.5.2  # 示例：替换为对应的新版本号
-git push origin v0.5.2
+git tag v0.5.3  # 示例：替换为对应的新版本号
+git push origin v0.5.3
 ```
 
 工作流见 [CI](.github/workflows/ci.yml)、[跨平台构建](.github/workflows/build.yml) 和 [Release](.github/workflows/release.yml)。尚未配置应用内自动更新、Apple 公证或 Windows 签名证书。

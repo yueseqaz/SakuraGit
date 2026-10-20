@@ -8,7 +8,7 @@
 
 SakuraGit is a lightweight Git desktop client built with **MyGo, Go, React, and TypeScript**. It renders through the operating system's WebView and works with your installed Git, **without bundling Chromium**. Mist-blue themes, resizable panels, and a focused Diff reader make everyday commits, code review, and branch operations easier to follow.
 
-> Current version: **0.5.2, early development**. Built and tested on macOS Apple Silicon, with explicit limitations; not a claim of production readiness or cross-platform verification. The application UI is currently primarily Chinese; this English README does not imply an English UI is available.
+> Current version: **0.5.3, early development**. Built and tested on macOS Apple Silicon, with explicit limitations; not a claim of production readiness or cross-platform verification. The application UI is currently primarily Chinese; this English README does not imply an English UI is available.
 
 ![SakuraGit workspace](docs/screenshots/workspace.png)
 
@@ -44,6 +44,18 @@ Download successfully published versions from [GitHub Releases](https://github.c
 | Linux | Separate x64 / ARM64 `.deb` and `.tar.gz` packages |
 
 All packages require system Git. Windows needs WebView2 Runtime. Linux needs a graphical desktop, GTK 3, and WebKitGTK 4.1; Debian packages declare the dependencies. macOS builds are ad-hoc signed but not notarized; Windows installers are not Authenticode signed. Security warnings may appear. **A successful build is not comprehensive device or GUI validation.** Windows / Linux ARM64 binaries are cross-compiled on same-OS x64 runners. Use the attached `SHA256SUMS` to check downloads.
+
+## Built-in Terminal
+
+Open a repository, then click **终端** in the top bar, **内置终端** in Development Tools, or press **Ctrl/Cmd + backtick**. A native MyGo/Ghostty window starts in that repository. Reopening focuses its existing session; up to eight repository sessions may be open.
+
+- macOS/Linux use the user's login shell. Windows prefers PowerShell, falling back to the system command interpreter. User shell startup files may change directories or run their own scripts.
+- Interactive input, ANSI colors, Unicode, resizing, scrollback, context-menu copy/paste and font zoom are provided by the terminal plugin. Ctrl+C interrupts commands; Cmd/Ctrl + mouse wheel zooms.
+- Closing a live session, the workspace, or the app asks before hanging up terminals and waiting for attached programs to exit. Exited shells retain their output until their window is closed. Detached background programs are not guaranteed to stop; commands are never rolled back automatically.
+- **This is an unrestricted shell, not the guarded Git-button API.** SakuraGit never sends startup commands or executes repository scripts automatically. Normal user shell startup files still run. Terminal-protocol clipboard reads/writes are denied; explicit copy/paste works. SakuraGit does not persist terminal output, but your shell may persist its own history.
+- Returning to the main window refreshes repository status. Terminal commands and other Git clients can change a repository concurrently.
+
+The terminal library ships with the app; installing Ghostty is unnecessary. Minimum requirements: **macOS 13**, **Windows 10 1809**, or Linux with glibc 2.28+ plus the main window's GTK 3/WebKitGTK 4.1 requirements. Docked panels, terminal tabs, session restoration and a shell picker are not implemented in this version.
 
 ## Getting Started
 
@@ -88,7 +100,7 @@ On macOS ARM64, the outputs are:
 
 ```text
 build/darwin-arm64/SakuraGit.app
-build/darwin-arm64/SakuraGit 0.5.2 arm64.dmg
+build/darwin-arm64/SakuraGit 0.5.3 arm64.dmg
 ```
 
 ```sh
@@ -150,8 +162,8 @@ The script checks automatic scroll loading across 426 commits, the oldest commit
 To publish a new version, update its version metadata and release notes, wait for `main` CI to pass, then run:
 
 ```sh
-git tag v0.5.2  # Example: replace with the new version number
-git push origin v0.5.2
+git tag v0.5.3  # Example: replace with the new version number
+git push origin v0.5.3
 ```
 
 See the [CI](.github/workflows/ci.yml), [cross-platform build](.github/workflows/build.yml), and [Release](.github/workflows/release.yml) workflows. In-app auto-updates, Apple notarization, and Windows signing certificates are not configured.

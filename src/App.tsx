@@ -63,6 +63,7 @@ import { WorkflowPanel } from './WorkflowPanel';
 import { cacheSession, emptySession, restoreStartup, readSessionCache } from './session';
 import type { WorkspaceSession } from './mygo';
 import { OperationBar } from './OperationBar';
+import { RepositoryTerminalButton } from './RepositoryTerminalButton';
 import { ErrorDetails, describeGitError } from './ErrorDetails';
 
 const native = isMyGo();
@@ -866,7 +867,7 @@ export default function App() {
           <div className="sidebar-version">
             <span>SakuraGit</span>
             <span>
-              v0.5.2 <span className="tiny-dot" /> MyGo
+              v0.5.3 <span className="tiny-dot" /> MyGo
             </span>
           </div>
         </div>
@@ -882,6 +883,13 @@ export default function App() {
             <strong>{viewNames[view]}</strong>
           </div>
           <div className="topbar-tools">
+            <RepositoryTerminalButton
+              root={snapshot?.root}
+              disabled={!!busy}
+              onError={(error) =>
+                setNotice({ kind: 'error', text: `终端启动失败：${messageOf(error)}` })
+              }
+            />
             <label className="search-box">
               <Search size={15} />
               <input

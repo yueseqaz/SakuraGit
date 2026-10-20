@@ -102,6 +102,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           lipo build/darwin-universal/SakuraGit.app/Contents/MacOS/SakuraGit -verify_arch arm64 x86_64
+          lipo build/darwin-universal/SakuraGit.app/Contents/Resources/libghostty-vt.dylib -verify_arch arm64 x86_64
           codesign --verify --deep --strict build/darwin-universal/SakuraGit.app
       - name: Collect and validate release packages
         env:

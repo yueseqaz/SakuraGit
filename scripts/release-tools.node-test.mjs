@@ -59,6 +59,10 @@ test('collect requires actual packages and the correct executable architecture',
   writeFileSync(join(stage, 'app.deb'), 'deb');
   assert.throws(() => collect(root, 'linux/amd64'));
   writeFileSync(join(stage, 'app.tar.gz'), 'tar');
+  assert.throws(() => collect(root, 'linux/amd64'), /bundled libghostty-vt/);
+  writeFileSync(join(stage, 'libghostty-vt.so'), elf(183));
+  assert.throws(() => collect(root, 'linux/amd64'), /architecture mismatch/);
+  writeFileSync(join(stage, 'libghostty-vt.so'), elf());
   assert.deepEqual(collect(root, 'linux/amd64'), assetNames('0.5.2', 'linux/amd64'));
   writeFileSync(join(stage, 'sakuragit'), elf(183));
   assert.throws(() => collect(root, 'linux/amd64'));

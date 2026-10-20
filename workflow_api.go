@@ -40,19 +40,13 @@ func (g *Git) OpenDevelopmentPath(ctx context.Context, root, path, action, edito
 	if action == "folder" && path == "" {
 		return mygo.Shell.OpenPath(resolved)
 	}
+	if action == "terminal" && path == "" {
+		return g.openRepositoryTerminal(ctx, resolved)
+	}
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 	var cmd *exec.Cmd
-	if action == "terminal" && path == "" {
-		switch runtime.GOOS {
-		case "darwin":
-			cmd = exec.CommandContext(ctx, "open", "-a", "Terminal", resolved)
-		case "windows":
-			cmd = exec.CommandContext(ctx, "wt.exe", "-d", resolved)
-		default:
-			return errors.New("当前平台请手动在终端打开仓库")
-		}
-	} else if action == "editor" {
+	if action == "editor" {
 		apps := map[string]string{"vscode": "Visual Studio Code", "cursor": "Cursor", "zed": "Zed", "textedit": "TextEdit"}
 		app, ok := apps[editor]
 		if !ok {
