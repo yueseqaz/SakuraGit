@@ -136,6 +136,19 @@ jobs:
           lipo build/darwin-universal/SakuraGit.app/Contents/MacOS/SakuraGit -verify_arch arm64 x86_64
           lipo build/darwin-universal/SakuraGit.app/Contents/Resources/libghostty-vt.dylib -verify_arch arm64 x86_64
           codesign --verify --deep --strict build/darwin-universal/SakuraGit.app
+      - name: Verify real native WebView workbench with an offline repository
+        if: matrix.platform == 'linux/amd64'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libgtk-3-0 libwebkit2gtk-4.1-0 fonts-noto-cjk xvfb xauth
+          GDK_BACKEND=x11 xvfb-run -a scripts/native-smoke.sh build/linux-amd64/sakuragit --skip-auto-refresh
+      - name: Save native workbench smoke diagnostics
+        if: always() && matrix.platform == 'linux/amd64'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-workbench-smoke
+          path: build/native-smoke-*.log
+          if-no-files-found: warn
       - name: Collect and validate release packages
         env:
           PLATFORM: ${{ matrix.platform }}

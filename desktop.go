@@ -10,11 +10,18 @@ import (
 //go:embed desktop-guard.js
 var desktopGuard string
 
-func applicationMenu() []*mygo.MenuItem {
+func applicationMenu(services ...*Git) []*mygo.MenuItem {
 	return []*mygo.MenuItem{
 		{Role: mygo.RoleAppMenu, Submenu: []*mygo.MenuItem{
 			{Role: mygo.RoleAbout}, mygo.Separator(),
-			{Label: "设置…", Accelerator: "CmdOrCtrl+,", Click: func(_ *mygo.MenuItem, win *mygo.Window) { _ = settingsRequested.Broadcast(true) }},
+			{Label: "设置…", Accelerator: "CmdOrCtrl+,", Click: func(_ *mygo.MenuItem, win *mygo.Window) {
+				if len(services) > 0 && services[0].desktop != nil {
+					d := services[0].desktop
+					d.win.Update(d.openSettings)
+				} else {
+					_ = settingsRequested.Broadcast(true)
+				}
+			}},
 			mygo.Separator(), {Role: mygo.RoleServices},
 			mygo.Separator(), {Role: mygo.RoleHide}, {Role: mygo.RoleHideOthers}, {Role: mygo.RoleUnhide},
 			mygo.Separator(), {Role: mygo.RoleQuit},

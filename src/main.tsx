@@ -8,8 +8,11 @@ import './reader.css';
 import './layout.css';
 import './workbench.css';
 import { installTextContextMenu } from './desktop-interactions';
+import { installNativeOverlaySync } from './native-overlays';
 
 const removeTextContextMenu = installTextContextMenu();
+const removeOverlaySync = installNativeOverlaySync();
+if (import.meta.hot) import.meta.hot.dispose(removeOverlaySync);
 if (window.__SAKURAGIT_EMBEDDED__) document.documentElement.dataset.host = 'native';
 if (import.meta.hot) import.meta.hot.dispose(removeTextContextMenu);
 createRoot(document.getElementById('root')!).render(<App />);

@@ -511,6 +511,43 @@
   .page-heading {
     flex-wrap: wrap;
   }
+  .workspace-topbar {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-block: 6px;
+  }
+  .workspace-topbar .breadcrumb {
+    width: 100%;
+    flex-shrink: 1;
+  }
+  .breadcrumb strong {
+    white-space: nowrap;
+  }
+  .topbar-tools {
+    width: 100%;
+    min-width: 0;
+    gap: 6px;
+  }
+  .topbar-tools .search-box {
+    width: auto;
+    min-width: 0;
+    flex: 1;
+  }
+  .topbar-tools .search-box input {
+    width: 100%;
+    min-width: 0;
+  }
+  .statusbar {
+    position: static;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .diff-footer {
+    flex-wrap: wrap;
+    white-space: normal;
+    gap: 6px;
+    font-size: 9px;
+  }
   .merge-panel {
     min-height: 700px;
   }

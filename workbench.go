@@ -24,6 +24,7 @@ type desktopWorkbench struct {
 	page              *mygo.WebView
 	root              string
 	visible, expanded bool
+	modal             bool
 	percent           float32
 	palette           string
 	saveMu            sync.Mutex
@@ -62,6 +63,22 @@ func (d *desktopWorkbench) hide() {
 	d.visible, d.expanded = false, false
 	d.publish()
 	d.page.Focus()
+}
+func (d *desktopWorkbench) openSettings() {
+	d.expanded = false
+	d.page.Focus()
+	_ = settingsRequested.EmitPage(d.page.Page(), true)
+}
+
+func (g *Git) WorkbenchModal(open bool) {
+	if d := g.desktop; d != nil {
+		d.win.Update(func() {
+			d.modal = open
+			if open {
+				d.page.Focus()
+			}
+		})
+	}
 }
 func (d *desktopWorkbench) setRoot(root string) {
 	d.win.Update(func() { d.root = root; d.expanded = false; d.publish() })
@@ -102,12 +119,12 @@ func (d *desktopWorkbench) view(c *ui.Context) {
 		ui.Row(c).Height(max(bar.Height, 40)).Padding(0, max(bar.Right, 12), 0, max(bar.Left, 12)).Gap(12).DragWindow().Children(func() {
 			ui.Text(c, "SakuraGit").Grow(1)
 			if ui.Button(c, "设置").Clicked() {
-				_ = settingsRequested.EmitPage(d.page.Page(), true)
+				d.openSettings()
 			}
 		})
-		if d.visible && d.expanded {
+		if d.visible && d.expanded && !d.modal {
 			d.terminalView(c)
-		} else if d.visible {
+		} else if d.visible && !d.modal {
 			if ui.SplitVerticalPercent(c, &d.percent,
 				func() { ui.WebView(c, d.page).Fill() },
 				func() { d.terminalView(c) },

@@ -55,6 +55,16 @@ export interface CommitFile {
   binary: boolean;
 }
 
+export interface ConflictDetails {
+  path: string;
+  base: string;
+  ours: string;
+  theirs: string;
+  result: string;
+  revision: string;
+  state: string;
+}
+
 export interface Diagnostics {
   version: string;
   name: string;
@@ -78,6 +88,13 @@ export interface File {
   worktree: string;
   untracked: boolean;
   conflicted: boolean;
+}
+
+export interface FileBackup {
+  id: string;
+  path: string;
+  createdAt: string;
+  content: string;
 }
 
 export interface HistoryPage {
@@ -245,6 +262,9 @@ export const Git = {
   commitFileDiff(root: string, hash: string, path: string): Promise<Diff> {
     return call("Git.CommitFileDiff", root, hash, path);
   },
+  conflict(root: string, path: string): Promise<ConflictDetails> {
+    return call("Git.Conflict", root, path);
+  },
   copyText(text: string): Promise<void> {
     return call("Git.CopyText", text);
   },
@@ -260,8 +280,14 @@ export const Git = {
   dropStash(root: string, hash: string, ref: string): Promise<Result> {
     return call("Git.DropStash", root, hash, ref);
   },
+  fileBackups(root: string): Promise<FileBackup[]> {
+    return call("Git.FileBackups", root);
+  },
   history(root: string, query: string, revision: string, offset: number): Promise<HistoryPage> {
     return call("Git.History", root, query, revision, offset);
+  },
+  historyAction(root: string, action: string, hash: string, revision: string): Promise<Result> {
+    return call("Git.HistoryAction", root, action, hash, revision);
   },
   ignoreFile(root: string, path: string, revision: string): Promise<Result> {
     return call("Git.IgnoreFile", root, path, revision);
@@ -287,6 +313,9 @@ export const Git = {
   publish(root: string, remote: string, branch: string): Promise<Result> {
     return call("Git.Publish", root, remote, branch);
   },
+  recoveryAction(root: string, action: string, path: string, revision: string): Promise<Result> {
+    return call("Git.RecoveryAction", root, action, path, revision);
+  },
   remoteBranches(source: string): Promise<RemoteBranches> {
     return call("Git.RemoteBranches", source);
   },
@@ -295,6 +324,9 @@ export const Git = {
   },
   restoreStash(root: string, hash: string, restoreIndex: boolean): Promise<Result> {
     return call("Git.RestoreStash", root, hash, restoreIndex);
+  },
+  saveConflict(root: string, path: string, revision: string, result: string): Promise<Result> {
+    return call("Git.SaveConflict", root, path, revision, result);
   },
   savePreferences(p: Preferences): Promise<void> {
     return call("Git.SavePreferences", p);
@@ -317,6 +349,9 @@ export const Git = {
   stageHunk(root: string, path: string, staged: boolean, revision: string, id: number): Promise<Result> {
     return call("Git.StageHunk", root, path, staged, revision, id);
   },
+  stageLines(root: string, path: string, staged: boolean, revision: string, positions: number[]): Promise<Result> {
+    return call("Git.StageLines", root, path, staged, revision, positions);
+  },
   stashDiff(root: string, hash: string): Promise<Diff> {
     return call("Git.StashDiff", root, hash);
   },
@@ -325,6 +360,9 @@ export const Git = {
   },
   textContextMenu(editable: boolean, selected: boolean): Promise<void> {
     return call("Git.TextContextMenu", editable, selected);
+  },
+  toggleTerminal(root: string): Promise<void> {
+    return call("Git.ToggleTerminal", root);
   },
   workflow(root: string): Promise<WorkflowInfo> {
     return call("Git.Workflow", root);
@@ -339,4 +377,5 @@ export const Git = {
 /** Events sent by the Go side. Subscribe with `events.name.on(listener)`. */
 export const events = {
   settingsRequested: event<boolean>("settings-requested"),
+  terminalDockChanged: event<boolean>("terminal-dock-changed"),
 } as const;

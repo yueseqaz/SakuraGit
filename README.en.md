@@ -8,7 +8,7 @@
 
 SakuraGit is a lightweight Git desktop client built with **MyGo, Go, React, and TypeScript**. It renders through the operating system's WebView and works with your installed Git, **without bundling Chromium**. Mist-blue themes, resizable panels, and a focused Diff reader make everyday commits, code review, and branch operations easier to follow.
 
-> Current version: **0.5.3, early development**. Built and tested on macOS Apple Silicon, with explicit limitations; not a claim of production readiness or cross-platform verification. The application UI is currently primarily Chinese; this English README does not imply an English UI is available.
+> Current version: **0.6.0, early development**. Built and tested on macOS Apple Silicon, with explicit limitations; not a claim of production readiness or cross-platform verification. The application UI is currently primarily Chinese; this English README does not imply an English UI is available.
 
 ![SakuraGit workspace](docs/screenshots/workspace.png)
 
@@ -17,19 +17,21 @@ SakuraGit is a lightweight Git desktop client built with **MyGo, Go, React, and 
 | Area | Available functionality |
 | --- | --- |
 | Repositories | Open local and recent repositories, initialize projects, clone a selected branch, optionally track only that branch |
-| Working tree | Staged / unstaged groups, file and group staging / unstaging, hunk staging for ordinary tracked text changes |
+| Working tree | Staged / unstaged groups, file and group staging / unstaging, hunk and selected-line staging / unstaging for ordinary tracked text modifications |
 | Commits | Subject and body, staged-content-only commits, per-repository commit drafts |
-| Diff reader | Unified / side-by-side views, syntax and intraline highlighting, wrapping, font sizes, full-window focus mode |
+| Diff reader | Unified / side-by-side views, syntax and intraline highlighting, wrapping, font sizes, next/previous change navigation (F7 / Shift+F7), full-window focus mode |
 | History | Visible authors, email and commit details, changed files and per-file Diffs, parent graph, automatic scroll paging and full-history search |
 | Branches | Create, switch, rename, safely delete merged branches, set upstream, check out remote branches, merge local branches |
 | Synchronization | Fetch, fast-forward-only Pull, non-force Push, first-push upstream setup, destination-aware confirmations |
 | Stash | Save, inspect, apply, and delete; optional untracked files and index restoration; applying retains the original entry |
-| Workflow tools | Locate conflicts, open an external editor / merge tool, detect remaining conflict markers, continue / abort Git workflows |
+| Workflow tools | Integrated three-way text merging, per-block choices, external editor / merge tool, detect remaining conflict markers, continue / abort Git workflows |
+| Terminal | Same-window native MyGo/Ghostty bottom dock, per-repository multi-session tabs, resizing, maximize / collapse, and guarded shutdown |
+| Recovery | Soft-undo a last local commit, back up and restore tracked text files, restore file backups, Cherry-pick / Revert from history |
 | Connections | Manage Fetch / Push URLs, inspect Git and authentication configuration, set repository-local identity |
-| Appearance | Mist-blue / graphite themes, light / dark / system appearance, persistent split-panel sizes, session and draft recovery |
+| Appearance | Mist-blue / graphite / forest / warm-sand themes, matching native terminal colors, light / dark / system appearance, persistent split-panel sizes, session and draft recovery |
 | Operation status | Clone and synchronization progress, elapsed time, cancellation, error guidance, and protection when quitting during writes |
 
-Workflow continuation / abort supports Git-initiated Merge, Rebase, Cherry-pick, and Revert operations. These buttons do not accept arbitrary Git commands and are not an integrated three-way merge editor; use the built-in terminal below for manual commands. Worktree support currently covers listing and opening existing worktrees.
+Workflow continuation / abort supports Git-initiated Merge, Rebase, Cherry-pick, and Revert operations. Git buttons do not accept arbitrary shell commands. Ordinary UTF-8 modify/modify conflicts have an integrated three-way editor; special conflicts use external tools. Use the built-in terminal for manual commands. Worktree support currently covers listing and opening existing worktrees.
 
 ![SakuraGit commit history](docs/screenshots/history.png)
 
@@ -47,15 +49,26 @@ All packages require system Git. Windows needs WebView2 Runtime. Linux needs a g
 
 ## Built-in Terminal
 
-Open a repository, then click **终端** in the top bar, **内置终端** in Development Tools, or press **Ctrl/Cmd + backtick**. A native MyGo/Ghostty window starts in that repository. Reopening focuses its existing session; up to eight repository sessions may be open.
+Open a repository, then click **终端** in the top bar, **内置终端** in Development Tools, or press **Ctrl/Cmd + backtick**. A native MyGo/Ghostty dock opens **inside the same main window**. Drag its divider, maximize / restore, collapse without ending programs, or add session tabs. Up to eight sessions can run across repositories; switching repositories shows only that repository’s sessions.
 
 - macOS/Linux use the user's login shell. Windows prefers PowerShell, falling back to the system command interpreter. User shell startup files may change directories or run their own scripts.
 - Interactive input, ANSI colors, Unicode, resizing, scrollback, context-menu copy/paste and font zoom are provided by the terminal plugin. Ctrl+C interrupts commands; Cmd/Ctrl + mouse wheel zooms.
-- Closing a live session, the workspace, or the app asks before hanging up terminals and waiting for attached programs to exit. Exited shells retain their output until their window is closed. Detached background programs are not guaranteed to stop; commands are never rolled back automatically.
+- Closing a live session, the workspace, or the app asks before hanging up terminals and waiting for attached programs to exit. Exited shells retain output in their tab; create a new session to start another shell. Detached background programs are not guaranteed to stop; commands are never rolled back automatically.
 - **This is an unrestricted shell, not the guarded Git-button API.** SakuraGit never sends startup commands or executes repository scripts automatically. Normal user shell startup files still run. Terminal-protocol clipboard reads/writes are denied; explicit copy/paste works. SakuraGit does not persist terminal output, but your shell may persist its own history.
-- Returning to the main window refreshes repository status. Terminal commands and other Git clients can change a repository concurrently.
+- Existing local-state polling detects changes when returning to the Git workspace. Terminal commands and other Git clients can change a repository concurrently.
 
-The terminal library ships with the app; installing Ghostty is unnecessary. Minimum requirements: **macOS 13**, **Windows 10 1809**, or Linux with glibc 2.28+ plus the main window's GTK 3/WebKitGTK 4.1 requirements. Chinese text needs a CJK font: DEB packages depend on `fonts-noto-cjk`; tar-archive users must install a suitable font themselves. Docked panels, terminal tabs, session restoration and a shell picker are not implemented in this version.
+The terminal library ships with the app; installing Ghostty is unnecessary. Minimum requirements: **macOS 13**, **Windows 10 1809**, or Linux with glibc 2.28+ plus the main window's GTK 3/WebKitGTK 4.1 requirements. Chinese text needs a CJK font: DEB packages depend on `fonts-noto-cjk`; tar-archive users must install a suitable font themselves. Dock height is saved locally. Page dialogs temporarily take the terminal view’s space without ending the session. PTY restoration after app restart and a shell picker are not implemented.
+
+## Three-way Merging And Recovery
+
+- Select a conflicted file to compare Base, Ours (index stage 2), and Theirs (stage 3), with an editable result below. Choose either side or concatenate both **per block**, preserving Git’s other automatically merged changes.
+- During Rebase, Ours is the rebased target and Theirs is the replayed commit, not simply “local / remote.”
+- Saving requires removing all conflict markers, checks file/index/repository revisions, backs up the original file, writes the result and stages it. It does **not** continue the workflow or create a merge commit automatically.
+- The built-in editor supports regular UTF-8 modify/modify conflicts, at most 1 MB per version. Add/delete, binary, symlink, type-change, and submodule conflicts need an external tool.
+- Unsaved results are cached per repository/file. If the source changed, the draft remains available but cannot overwrite external changes; copy needed work before reloading. Cache failures are visible.
+- Recovery soft-undoes an ordinary last local commit without changing files or the index. Known remote references containing the commit block the action; unknown server changes cannot be detected without Fetch.
+- Single-file restore first backs up unstaged text changes, then restores the index version. Restoring a backup changes only the worktree and backs up the overwritten content. Backups live in each worktree’s Git metadata under `sakuragit-backups/`; they are not uploaded or automatically deleted, and are not a complete repository backup or an operation log.
+- Cherry-pick / Revert from commit details require a clean worktree and preserve hooks/signing. Merge commits need an explicit mainline and must be handled in the terminal.
 
 ## Getting Started
 
@@ -100,7 +113,7 @@ On macOS ARM64, the outputs are:
 
 ```text
 build/darwin-arm64/SakuraGit.app
-build/darwin-arm64/SakuraGit 0.5.3 arm64.dmg
+build/darwin-arm64/SakuraGit 0.6.0 arm64.dmg
 ```
 
 ```sh
@@ -122,13 +135,13 @@ Local builds currently use **ad-hoc signing, without Apple Developer ID signing 
 
 ## Safety Boundaries And Limitations
 
-- No force push, hard reset, discard-changes action, or arbitrary shell execution. Branch switching and Stash application require a clean working tree. Pull is fast-forward-only, without automatic Stash, Merge, or Rebase.
+- Git buttons do not offer force push, hard reset, or arbitrary shell execution; constrained file restore requires confirmation and a backup. The interactive terminal is an unrestricted shell. Branch switching and Stash application require a clean working tree. Pull is fast-forward-only, without automatic Stash, Merge, or Rebase.
 - Cancellation is not rollback: commits, uploads, or partial file changes may already have happened. Refresh and inspect repository state after errors or cancellation. Failed / canceled clone directories are retained for inspection, never deleted automatically.
 - Git hooks, signing, and external merge tools inherit local configuration and can execute local programs. **Open trusted repositories only.** Application-level revision checks cannot prevent concurrent writes by other Git clients.
-- Hunk staging supports ordinary tracked text modifications only. Additions, deletions, renames, binaries, symlinks, mode changes, and submodules use whole-file operations. Line-level staging is not available.
+- Hunk and line staging support ordinary tracked text modifications only. Additions, deletions, renames, binaries, symlinks, mode changes, and submodules use whole-file operations. Deletion and addition lines are selected independently; select both sides to stage a complete replacement.
 - Diff does not run external diff programs or textconv. The UI displays at most 3,000 lines with an explicit limit notice. Highlighting is best-effort based on patch context; large or unsupported content falls back to plain text.
 - History includes only locally reachable commits and does not fetch automatically. Shallow clones retain their depth limits. Ordinary Git commands typically have a 90-second deadline; clone has a 30-minute deadline.
-- No integrated three-way editor, interactive Rebase, tag management, Worktree creation / deletion, or complete submodule / LFS management. Existing submodule / LFS detection is informational only.
+- No interactive Rebase, tag management, Worktree creation / deletion, or complete submodule / LFS management. Existing submodule / LFS detection is informational only.
 - Real large production repositories, live GitHub / GitLab authentication, complete crash recovery, and cross-platform runtime behavior need further verification. Session persistence is not a backup of repository files.
 
 ## Testing
@@ -139,7 +152,7 @@ npm run build:web
 go vet ./...
 ```
 
-The suite currently includes **78 frontend tests**, plus Go integration tests for repository state, commits, synchronization, paging, conflicts, cancellation, sessions, and path protection. Tests use self-created temporary repositories and local bare remotes, not your private repositories.
+The suite currently includes frontend unit and browser-fixture tests, plus Go integration tests for repository state, commits, synchronization, paging, conflicts, cancellation, sessions, and path protection. Tests use self-created temporary repositories and local bare remotes, not your private repositories.
 
 Native checks create and modify isolated fixtures and launch the packaged application:
 
@@ -162,8 +175,8 @@ The script checks automatic scroll loading across 426 commits, the oldest commit
 To publish a new version, update its version metadata and release notes, wait for `main` CI to pass, then run:
 
 ```sh
-git tag v0.5.3  # Example: replace with the new version number
-git push origin v0.5.3
+git tag v0.6.0  # Example: replace with the new version number
+git push origin v0.6.0
 ```
 
 See the [CI](.github/workflows/ci.yml), [cross-platform build](.github/workflows/build.yml), and [Release](.github/workflows/release.yml) workflows. In-app auto-updates, Apple notarization, and Windows signing certificates are not configured.

@@ -53,7 +53,7 @@ try {
     merge = false,
     viewport = { width: 1440, height: 920 },
   ) {
-    const page = await browser.newPage({ viewport, deviceScaleFactor: 1 });
+    const page = await browser.newPage({ viewport, deviceScaleFactor: 1, reducedMotion: 'reduce' });
     const failures = [];
     page.on('pageerror', (error) => failures.push(error.message));
     const snapshot = {
@@ -131,6 +131,7 @@ try {
             if (method === 'Git.SaveConflict' || method === 'Git.StageLines')
               return { output: 'fixture only' };
             if (
+              method === 'Git.WorkbenchModal' ||
               method === 'Git.SavePreferences' ||
               method === 'Git.SaveSession' ||
               method === 'Git.TextContextMenu'

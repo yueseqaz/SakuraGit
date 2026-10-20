@@ -146,6 +146,9 @@ func (e *Engine) RecoveryAction(ctx context.Context, root, action, path, revisio
 		if !ok || f.Untracked || f.Conflicted || f.OldPath != "" || f.Worktree != "M" {
 			return Result{}, errors.New("只支持恢复普通已跟踪修改文件；不删除未跟踪文件")
 		}
+		if _, err = e.developmentPath(path); err != nil {
+			return Result{}, err
+		}
 		fs, err := os.OpenRoot(e.root)
 		if err != nil {
 			return Result{}, err
@@ -195,7 +198,12 @@ func (e *Engine) RecoveryAction(ctx context.Context, root, action, path, revisio
 		if err != nil {
 			return Result{}, err
 		}
-		data, err := os.ReadFile(filepath.Join(dir, path+".json"))
+		backupPath := filepath.Join(dir, path+".json")
+		backupInfo, err := os.Lstat(backupPath)
+		if err != nil || !backupInfo.Mode().IsRegular() || backupInfo.Size() > 7<<20 {
+			return Result{}, errors.New("备份不是可读取的普通小型文件")
+		}
+		data, err := os.ReadFile(backupPath)
 		if err != nil {
 			return Result{}, err
 		}
@@ -203,11 +211,9 @@ func (e *Engine) RecoveryAction(ctx context.Context, root, action, path, revisio
 		if json.Unmarshal(data, &backup) != nil || backup.ID != path || !safeMergeText(backup.Content) {
 			return Result{}, errors.New("备份不可读")
 		}
-		resolved, err := e.developmentPath(backup.Path)
-		if err != nil {
+		if _, err = e.developmentPath(backup.Path); err != nil {
 			return Result{}, err
 		}
-		_ = resolved
 		fs, err := os.OpenRoot(e.root)
 		if err != nil {
 			return Result{}, err

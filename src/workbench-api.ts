@@ -18,6 +18,7 @@ export interface FileBackup {
 }
 
 export const Workbench = {
+  modal: (open: boolean): Promise<void> => call('Git.WorkbenchModal', open),
   toggleTerminal: (root: string): Promise<void> => call('Git.ToggleTerminal', root),
   stageLines: (
     root: string,

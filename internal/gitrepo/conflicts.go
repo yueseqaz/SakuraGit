@@ -37,6 +37,9 @@ func (e *Engine) conflict(ctx context.Context, path string) (ConflictDetails, er
 	if !ok || !f.Conflicted {
 		return d, errors.New("此文件已不再处于冲突状态")
 	}
+	if _, err := e.developmentPath(path); err != nil {
+		return d, err
+	}
 	entries, err := run(ctx, e.root, "ls-files", "--unmerged", "-z", "--", path)
 	if err != nil {
 		return d, err

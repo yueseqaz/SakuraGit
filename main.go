@@ -211,7 +211,7 @@ func main() {
 			prefs = loadPreferences()
 		}
 		mygo.Theme.SetSource(mygo.ThemeSource(prefs.Appearance))
-		mygo.App.SetMenu(mygo.NewMenu(applicationMenu()))
+		mygo.App.SetMenu(mygo.NewMenu(applicationMenu(service)))
 		background := "#f3f6f8"
 		if mygo.Theme.IsDark() {
 			background = "#17212a"
@@ -220,16 +220,7 @@ func main() {
 		if *smoke {
 			stateKey = ""
 		}
-		var win *mygo.Window
-		if !*smoke {
-			win = newDesktopWorkbench(service, background, stateKey, prefs)
-		} else {
-			win = mygo.NewWindow(mygo.WindowOptions{
-				Title: "SakuraGit", URL: "/", Width: 1440, Height: 920, MinWidth: 900, MinHeight: 620,
-				TitleBarStyle: mygo.TitleBarHiddenInset, TitleBarHeight: 48, BackgroundColor: background, StateKey: stateKey,
-				Page: mygo.PageOptions{PreloadScript: desktopGuard},
-			})
-		}
+		win := newDesktopWorkbench(service, background, stateKey, prefs)
 		if !*smoke {
 			win.OnClose(func(e *mygo.CloseEvent) {
 				if service.protectExit(win, false) || service.protectTerminals(win, false) {
@@ -238,7 +229,7 @@ func main() {
 			})
 		}
 		if *smoke {
-			startSmoke(win, &smokeOK, *autoFile)
+			startSmoke(service, win, service.desktop.page.Page(), &smokeOK, *autoFile)
 		}
 	})
 	if err := mygo.App.Run(); err != nil {
