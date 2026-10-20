@@ -55,7 +55,7 @@ Open a repository, then click **终端** in the top bar, **内置终端** in Dev
 - **This is an unrestricted shell, not the guarded Git-button API.** SakuraGit never sends startup commands or executes repository scripts automatically. Normal user shell startup files still run. Terminal-protocol clipboard reads/writes are denied; explicit copy/paste works. SakuraGit does not persist terminal output, but your shell may persist its own history.
 - Returning to the main window refreshes repository status. Terminal commands and other Git clients can change a repository concurrently.
 
-The terminal library ships with the app; installing Ghostty is unnecessary. Minimum requirements: **macOS 13**, **Windows 10 1809**, or Linux with glibc 2.28+ plus the main window's GTK 3/WebKitGTK 4.1 requirements. Docked panels, terminal tabs, session restoration and a shell picker are not implemented in this version.
+The terminal library ships with the app; installing Ghostty is unnecessary. Minimum requirements: **macOS 13**, **Windows 10 1809**, or Linux with glibc 2.28+ plus the main window's GTK 3/WebKitGTK 4.1 requirements. Chinese text needs a CJK font: DEB packages depend on `fonts-noto-cjk`; tar-archive users must install a suitable font themselves. Docked panels, terminal tabs, session restoration and a shell picker are not implemented in this version.
 
 ## Getting Started
 

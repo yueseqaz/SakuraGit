@@ -49,6 +49,9 @@ jobs:
         run: |
           npm run test:web
           npm run build:web
+      - name: Install Linux native UI fonts
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends fonts-noto-cjk
       - name: Go race tests
         run: go test -race -count=1 -timeout=15m ./...
       - name: Go vet
