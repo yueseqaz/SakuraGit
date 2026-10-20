@@ -243,6 +243,9 @@ func (e *Engine) DevelopmentPath(ctx context.Context, root, path string) (string
 	if err := e.checkRoot(root); err != nil {
 		return "", err
 	}
+	return e.developmentPath(path)
+}
+func (e *Engine) developmentPath(path string) (string, error) {
 	if path == "" {
 		return e.root, nil
 	}

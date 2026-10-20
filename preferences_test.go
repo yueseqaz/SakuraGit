@@ -7,6 +7,17 @@ import (
 )
 
 func TestPreferencesValidation(t *testing.T) {
+	for _, palette := range []string{"mist", "graphite", "forest", "sand"} {
+		for _, mode := range []string{"system", "light", "dark"} {
+			if err := validatePreferences(Preferences{palette, mode, 12}); err != nil {
+				t.Fatal(palette, mode, err)
+			}
+			light, dark := terminalPalette(palette)
+			if light.Background == dark.Background || light.Foreground == light.Background || dark.Foreground == dark.Background {
+				t.Fatal("invalid terminal theme", palette)
+			}
+		}
+	}
 	if err := validatePreferences(defaultPreferences()); err != nil {
 		t.Fatal(err)
 	}

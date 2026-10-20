@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
-	"path/filepath"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -14,22 +14,26 @@ import (
 	"github.com/egoist/mygo/ui"
 )
 
-// Reserve a session before creating native objects, without holding a mutex
-// across calls that wait for the UI thread (including dialogs and Focus).
 type repositoryTerminals struct {
 	mu       sync.Mutex
 	sessions map[string]*repositoryTerminal
+	active   map[string]string
 	closing  bool
 }
-
 type repositoryTerminal struct {
-	ready  chan struct{}
-	win    *mygo.Window
-	term   *terminal.Terminal
-	prompt atomic.Bool
+	id, root string
+	ready    chan struct{}
+	win      *mygo.Window
+	term     *terminal.Terminal
+	prompt   atomic.Bool
+	focus    atomic.Bool
 }
 
 func (g *Git) openRepositoryTerminal(ctx context.Context, root string) error {
+	return g.createRepositoryTerminal(ctx, root, false)
+}
+
+func (g *Git) createRepositoryTerminal(ctx context.Context, root string, fresh bool) error {
 	if g.ephemeral {
 		return errors.New("隔离测试模式不允许启动交互式终端")
 	}
@@ -38,81 +42,133 @@ func (g *Git) openRepositoryTerminal(ctx context.Context, root string) error {
 		g.terminals.mu.Unlock()
 		return errors.New("正在关闭终端，请先完成退出确认")
 	}
-	if old := g.terminals.sessions[root]; old != nil {
-		g.terminals.mu.Unlock()
-		select {
-		case <-old.ready:
-			if old.win != nil {
-				old.win.Focus()
-				return nil
+	if !fresh {
+		var old *repositoryTerminal
+		for _, s := range g.terminals.sessions {
+			if s.root == root {
+				old = s
+				if g.terminals.active[root] == s.id {
+					break
+				}
 			}
-			return errors.New("终端未能启动，请重试")
-		case <-ctx.Done():
-			return ctx.Err()
+		}
+		if old != nil {
+			g.terminals.mu.Unlock()
+			select {
+			case <-old.ready:
+				if old.term == nil {
+					return errors.New("终端未能启动，请重试")
+				}
+				g.showTerminal(root, old.id)
+				return nil
+			case <-ctx.Done():
+				return ctx.Err()
+			}
 		}
 	}
 	if len(g.terminals.sessions) >= 8 {
 		g.terminals.mu.Unlock()
-		return errors.New("最多同时打开 8 个仓库终端，请先关闭不再使用的窗口")
+		return errors.New("最多同时运行 8 个终端，请先关闭不再使用的标签")
 	}
-	s := &repositoryTerminal{ready: make(chan struct{})}
+	if g.desktop == nil {
+		g.terminals.mu.Unlock()
+		return errors.New("终端工作台尚未就绪")
+	}
+	s := &repositoryTerminal{id: rand.Text(), root: root, ready: make(chan struct{}), win: g.desktop.win}
 	if g.terminals.sessions == nil {
-		g.terminals.sessions = make(map[string]*repositoryTerminal)
+		g.terminals.sessions = map[string]*repositoryTerminal{}
 	}
-	g.terminals.sessions[root] = s
+	if g.terminals.active == nil {
+		g.terminals.active = map[string]string{}
+	}
+	g.terminals.sessions[s.id] = s
 	g.terminals.mu.Unlock()
-	defer close(s.ready)
 	term, err := terminal.New(repositoryTerminalOptions(root))
+	if err == nil {
+		s.term = term
+		p := loadPreferences()
+		light, dark := terminalPalette(p.Palette)
+		term.SetTheme(light, dark)
+	}
+	close(s.ready)
 	if err != nil {
 		g.terminals.mu.Lock()
-		delete(g.terminals.sessions, root)
+		delete(g.terminals.sessions, s.id)
 		g.terminals.mu.Unlock()
 		return fmt.Errorf("无法创建内置终端，请检查终端运行库和系统 Shell：%w", err)
 	}
-	s.term = term
-	s.win = mygo.NewWindow(mygo.WindowOptions{
-		Title: "SakuraGit · 终端 · " + filepath.Base(root),
-		Width: 1080, Height: 700, MinWidth: 640, MinHeight: 400,
-		StateKey: "repository-terminal",
-		Content:  ui.View(repositoryTerminalView(root, term)),
-	})
-	s.win.OnClose(func(e *mygo.CloseEvent) {
-		if terminalRunning(term.Done()) {
-			e.PreventDefault()
+	g.showTerminal(root, s.id)
+	go func() { <-term.Done(); s.win.Invalidate() }()
+	return nil
+}
+
+func (g *Git) showTerminal(root, id string) {
+	if d := g.desktop; d != nil {
+		d.win.Update(func() {
 			g.terminals.mu.Lock()
-			closing := g.terminals.closing
-			g.terminals.mu.Unlock()
-			if closing {
+			if g.terminals.closing {
+				g.terminals.mu.Unlock()
 				return
 			}
-			if s.prompt.CompareAndSwap(false, true) {
-				go func() {
-					defer s.prompt.Store(false)
-					if confirmTerminalClose(s.win, 1) {
-						if err := stopTerminalWindows([]*repositoryTerminal{s}); err != nil {
-							_, _ = mygo.Dialog.Message(mygo.MessageOptions{Parent: s.win, Type: mygo.MessageWarning, Message: "终端尚未停止，已保留窗口", Detail: err.Error()})
-						} else {
-							s.win.Close()
-						}
-					}
-				}()
+			if s := g.terminals.sessions[id]; s != nil {
+				s.focus.Store(true)
+				g.terminals.active[root] = id
 			}
+			g.terminals.mu.Unlock()
+			// A delayed shell startup must never switch the visible repository back.
+			if d.root == root {
+				d.visible = true
+				d.publish()
+			}
+		})
+	}
+}
+
+func (g *Git) ToggleTerminal(ctx context.Context, root string) error {
+	if _, err := g.engine.DevelopmentPath(ctx, root, ""); err != nil {
+		return err
+	}
+	if g.ephemeral || g.desktop == nil {
+		return errors.New("此模式不提供交互式终端")
+	}
+	// Toggle on the UI thread; creating a shell stays off the UI thread.
+	d := g.desktop
+	d.win.Update(func() {
+		if d.visible && d.root == root {
+			d.hide()
+			return
 		}
+		go g.reportTerminalOpen(root, false)
 	})
-	s.win.OnClosed(func() {
-		go term.Close()
+	return nil
+}
+func (g *Git) reportTerminalOpen(root string, fresh bool) {
+	if err := g.createRepositoryTerminal(context.Background(), root, fresh); err != nil {
+		_, _ = mygo.Dialog.Message(mygo.MessageOptions{Parent: g.desktop.win, Type: mygo.MessageWarning, Message: "终端未能打开", Detail: err.Error()})
+	}
+}
+
+func (g *Git) closeTerminal(s *repositoryTerminal) {
+	if !s.prompt.CompareAndSwap(false, true) {
+		return
+	}
+	go func() {
+		defer s.prompt.Store(false)
+		if terminalRunning(s.term.Done()) && !confirmTerminalClose(s.win, 1) {
+			return
+		}
+		if err := stopTerminalWindows([]*repositoryTerminal{s}); err != nil {
+			_, _ = mygo.Dialog.Message(mygo.MessageOptions{Parent: s.win, Type: mygo.MessageWarning, Message: "终端尚未停止", Detail: err.Error()})
+			return
+		}
 		g.terminals.mu.Lock()
-		if g.terminals.sessions[root] == s {
-			delete(g.terminals.sessions, root)
+		delete(g.terminals.sessions, s.id)
+		if g.terminals.active[s.root] == s.id {
+			delete(g.terminals.active, s.root)
 		}
 		g.terminals.mu.Unlock()
-	})
-	go func() {
-		<-term.Done()
-		<-s.ready
 		s.win.Invalidate()
 	}()
-	return nil
 }
 
 func repositoryTerminalOptions(root string) terminal.Options {
@@ -142,7 +198,7 @@ func repositoryTerminalView(root string, term *terminal.Terminal) func(*ui.Conte
 			terminal.View(c, term).Grow(1).FillWidth().AutoFocus()
 			status := "真实 Shell · 命令不受 Git 按钮限制 · Ctrl+C 中断 · 右键复制/粘贴 · 按住 Cmd/Ctrl 滚轮缩放"
 			if !terminalRunning(term.Done()) {
-				status = fmt.Sprintf("Shell 已退出（%d）· 输出保留在本窗口 · 关闭后可重新打开", term.ExitCode())
+				status = fmt.Sprintf("Shell 已退出（%d）· 输出保留在当前标签 · 新建终端可重新启动", term.ExitCode())
 			}
 			ui.Text(c, status).FontSize(11).Padding(8)
 		})
@@ -168,7 +224,8 @@ func confirmTerminalClose(win *mygo.Window, count int) bool {
 	return err == nil && choice.Button == 1
 }
 
-// Both app quit and closing the workspace must account for terminal windows.
+// Hiding the dock never stops a process. Closing the workspace checks every
+// session, including hidden repositories, before it can destroy the host.
 func (g *Git) protectTerminals(win *mygo.Window, quit bool) bool {
 	g.terminals.mu.Lock()
 	if len(g.terminals.sessions) == 0 {
@@ -195,12 +252,10 @@ func (g *Git) protectTerminals(win *mygo.Window, quit bool) bool {
 	go func() {
 		completed := false
 		defer func() {
+			g.terminals.mu.Lock()
+			g.terminals.closing = false
+			g.terminals.mu.Unlock()
 			if !completed {
-				g.terminals.mu.Lock()
-				g.terminals.closing = false
-				g.terminals.mu.Unlock()
-				// The Git-operation guard may already have approved quitting.
-				// Canceling this second confirmation must leave the app usable.
 				g.operationMu.Lock()
 				g.exitApproved = false
 				g.operationMu.Unlock()
@@ -221,19 +276,15 @@ func (g *Git) protectTerminals(win *mygo.Window, quit bool) bool {
 			return
 		}
 		if err := stopTerminalWindows(sessions); err != nil {
-			_, _ = mygo.Dialog.Message(mygo.MessageOptions{Parent: win, Type: mygo.MessageWarning, Message: "终端尚未停止，已保留窗口", Detail: err.Error()})
+			_, _ = mygo.Dialog.Message(mygo.MessageOptions{Parent: win, Type: mygo.MessageWarning, Message: "终端尚未停止，已保留工作台", Detail: err.Error()})
 			return
 		}
-		for _, s := range sessions {
-			if s.win != nil {
-				s.win.Close()
-			}
-		}
 		g.terminals.mu.Lock()
+		for _, s := range sessions {
+			delete(g.terminals.sessions, s.id)
+		}
 		g.terminals.closing = false
 		g.terminals.mu.Unlock()
-		// The next close/quit request rechecks both guards, including any
-		// session or Git operation opened while this dialog was displayed.
 		completed = true
 		if quit {
 			mygo.App.Quit()

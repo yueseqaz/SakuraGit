@@ -23,7 +23,9 @@ export function readSessionCache(): WorkspaceSession {
       !Number.isSafeInteger(v.updatedAt) ||
       v.updatedAt < 0 ||
       (v.root !== '' && !absolute(v.root)) ||
-      !['changes', 'history', 'worktrees', 'stashes', 'remotes', 'workflow'].includes(v.view) ||
+      !['changes', 'history', 'worktrees', 'stashes', 'remotes', 'workflow', 'recovery'].includes(
+        v.view,
+      ) ||
       !v.drafts ||
       typeof v.drafts !== 'object' ||
       Array.isArray(v.drafts) ||

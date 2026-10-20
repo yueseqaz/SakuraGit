@@ -22,7 +22,7 @@ func defaultPreferences() Preferences {
 }
 
 func validatePreferences(p Preferences) error {
-	if (p.Palette != "mist" && p.Palette != "graphite") || (p.Appearance != "system" && p.Appearance != "light" && p.Appearance != "dark") || p.CodeSize < 11 || p.CodeSize > 16 {
+	if (p.Palette != "mist" && p.Palette != "graphite" && p.Palette != "forest" && p.Palette != "sand") || (p.Appearance != "system" && p.Appearance != "light" && p.Appearance != "dark") || p.CodeSize < 11 || p.CodeSize > 16 {
 		return errors.New("无效的外观设置")
 	}
 	return nil
@@ -77,6 +77,7 @@ func (g *Git) SavePreferences(p Preferences) error {
 		}
 	}
 	mygo.Theme.SetSource(mygo.ThemeSource(p.Appearance))
+	g.updateTerminalPreferences(p)
 	return nil
 }
 

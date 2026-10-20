@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { isMyGo } from 'mygo-runtime';
 import { LoaderCircle, Terminal } from 'lucide-react';
-import { Git } from './mygo';
+import { Workbench, onTerminalDockChanged } from './workbench-api';
 
 export function RepositoryTerminalButton({
   root,
@@ -14,13 +14,17 @@ export function RepositoryTerminalButton({
 }) {
   const opening = useRef(false);
   const [loading, setLoading] = useState(false);
+  const [visible, setVisible] = useState(false);
   const native = isMyGo();
+  useEffect(() => {
+    if (native && window.__SAKURAGIT_EMBEDDED__) return onTerminalDockChanged(setVisible);
+  }, [native]);
   const launch = async () => {
     if (!native || !root || disabled || opening.current) return;
     opening.current = true;
     setLoading(true);
     try {
-      await Git.openDevelopmentPath(root, '', 'terminal', '');
+      await Workbench.toggleTerminal(root);
     } catch (error) {
       onError(error);
     } finally {
@@ -53,9 +57,10 @@ export function RepositoryTerminalButton({
     <button
       className="button compact"
       aria-label="打开仓库内置终端"
+      aria-pressed={visible}
       title={
         native
-          ? '在当前仓库打开真实 Shell（Ctrl/Cmd + `）；命令不受 Git 按钮限制'
+          ? '展开 / 收起底部终端（Ctrl/Cmd + `）；收起后程序继续运行'
           : '内置终端仅在桌面应用中提供'
       }
       disabled={!native || !root || disabled || loading}

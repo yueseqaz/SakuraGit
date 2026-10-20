@@ -1,7 +1,7 @@
 {
   "name": "sakuragit",
   "private": true,
-  "version": "0.5.3",
+  "version": "0.6.0",
   "description": "A lightweight Git desktop client built with MyGo, Go, React, and TypeScript.",
   "repository": {
     "type": "git",
@@ -28,6 +28,7 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@testing-library/react": "^16.3.3",
     "@types/prismjs": "^1.26.6",
     "@types/react": "^19.2.0",

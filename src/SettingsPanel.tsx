@@ -1,5 +1,6 @@
 import { Check, Monitor, Moon, Sun } from 'lucide-react';
 import type { Preferences } from './mygo';
+import { palettes } from './appearance';
 
 export function SettingsPanel({
   value,
@@ -19,12 +20,7 @@ export function SettingsPanel({
         主题色 <span>PALETTE</span>
       </h3>
       <div className="palette-options">
-        {(
-          [
-            ['mist', '雾霾蓝', '安静、通透，让代码成为主角。'],
-            ['graphite', '石墨灰', '克制的中性色，专注每一行。'],
-          ] as const
-        ).map(([id, name, description]) => (
+        {palettes.map(({ id, name, description }) => (
           <button
             type="button"
             key={id}
@@ -38,6 +34,14 @@ export function SettingsPanel({
               <i />
               <i />
             </span>
+            <span className={`theme-preview ${id}`} aria-hidden="true">
+              <i />
+              <span>
+                <b />
+                <b />
+                <b />
+              </span>
+            </span>
             <strong>
               {name} {value.palette === id && <Check size={15} />}
             </strong>
@@ -45,6 +49,9 @@ export function SettingsPanel({
           </button>
         ))}
       </div>
+      <p className="theme-note">
+        4 款主题 × 浅色 / 深色 / 跟随系统 · 同步应用于工作台、Diff 与内置终端。
+      </p>
       <h3>
         外观 <span>APPEARANCE</span>
       </h3>
@@ -88,7 +95,7 @@ export function SettingsPanel({
       </div>
       <div className="settings-footnote">
         {saving ? '正在保存…' : '自动保存 · 下次启动继续使用'}
-        <span>SakuraGit 0.5.3 / MyGo</span>
+        <span>SakuraGit 0.6.0 / MyGo</span>
       </div>
     </div>
   );

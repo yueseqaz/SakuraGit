@@ -9,6 +9,8 @@ import {
 } from 'react';
 import {
   CheckCircle2,
+  ArrowUp,
+  ArrowDown,
   Code2,
   FileCode2,
   LoaderCircle,
@@ -52,6 +54,7 @@ export function DiffPanel({
   snapshot,
   onStage,
   onHunk,
+  onLines,
   readonlyTitle,
   disabled,
   codeSize,
@@ -64,6 +67,7 @@ export function DiffPanel({
   snapshot: Snapshot;
   onStage: (files: File[], stage: boolean) => void;
   onHunk?: (id: number) => void;
+  onLines?: (positions: number[]) => void;
   readonlyTitle?: string;
   disabled: boolean;
   codeSize: number;
@@ -73,6 +77,21 @@ export function DiffPanel({
   const [focused, setFocused] = useState(false);
   const focusButton = useRef<HTMLButtonElement>(null);
   const scroll = useRef<HTMLDivElement>(null);
+  const diffKey = `${snapshot.root}:${diff?.path}:${diff?.revision}:${selection?.kind === 'file' ? selection.staged : ''}`;
+  const [lineSelection, setLineSelection] = useState<{ key: string; positions: number[] }>({
+    key: '',
+    positions: [],
+  });
+  const selectedLines = lineSelection.key === diffKey ? lineSelection.positions : [];
+  const [location, setLocation] = useState({ key: '', index: -1 });
+  const currentHunk = location.key === diffKey ? location.index : -1;
+  const navigate = (direction: number) => {
+    const hunks = scroll.current?.querySelectorAll<HTMLElement>('.diff-hunk');
+    if (!hunks?.length) return;
+    const index = (currentHunk + direction + hunks.length) % hunks.length;
+    hunks[index].scrollIntoView?.({ block: 'center', behavior: 'auto' });
+    setLocation({ key: diffKey, index });
+  };
   const position = useRef({ top: 0, left: 0 });
   const wasFocused = useRef(false);
   const changeFocus = (value: boolean) => {
@@ -101,6 +120,30 @@ export function DiffPanel({
   const lines = useMemo(() => parseDiff(diff?.text || '', 3001), [diff?.text]);
   const visible = useMemo(() => lines.slice(0, 3000), [lines]);
   const rows = useMemo(() => splitDiff(visible), [visible]);
+  const linePositions = useMemo(() => new Map(visible.map((line, i) => [line, i])), [visible]);
+  const chooseLine = (line?: DiffLine) => {
+    if (!onLines || !diff?.hunks.length) return null;
+    if (!line || !['add', 'remove'].includes(line.kind))
+      return <span className="line-picker-placeholder" />;
+    const index = linePositions.get(line)!;
+    return (
+      <input
+        className="line-picker"
+        type="checkbox"
+        aria-label={`选择${line.kind === 'add' ? `新第 ${line.next} 行新增` : `原第 ${line.old} 行删除`}`}
+        checked={selectedLines.includes(index)}
+        disabled={disabled || loading}
+        onChange={() => {
+          setLineSelection({
+            key: diffKey,
+            positions: selectedLines.includes(index)
+              ? selectedLines.filter((i) => i !== index)
+              : [...selectedLines, index],
+          });
+        }}
+      />
+    );
+  };
   const { spans: highlights, mode: highlightMode } = useDiffHighlight(visible, diff?.path || '');
   const code = (line: DiffLine) =>
     highlights.get(line)?.map((span, i) => (
@@ -148,7 +191,10 @@ export function DiffPanel({
     const match = /^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@(.*)/.exec(line.text);
     const action = diff?.hunks.find((h) => h.line === index);
     return (
-      <div className="diff-hunk diff-line hunk" key={index}>
+      <div
+        className={`diff-hunk diff-line hunk ${visible.filter((l, i) => i < index && l.kind === 'hunk').length === currentHunk ? 'active-hunk' : ''}`}
+        key={index}
+      >
         <span className="hunk-location">
           {match ? `原 ${match[1]} 行 → 新 ${match[3]} 行` : line.text}
         </span>
@@ -174,6 +220,7 @@ export function DiffPanel({
     ) : null;
   const cell = (line: DiffLine | undefined, side: 'left' | 'right') => (
     <div className={`split-cell ${line?.kind || 'blank'}`}>
+      {chooseLine(line)}
       <span className="line-number">{side === 'left' ? line?.old : line?.next}</span>
       <span className="line-symbol">
         {line?.kind === 'add' ? '+' : line?.kind === 'remove' ? '−' : ''}
@@ -186,6 +233,12 @@ export function DiffPanel({
       className={`diff-panel diff-reader ${options.wrap ? 'wrap-lines' : ''} ${focused ? 'is-focused' : ''}`}
       data-highlight-mode={highlightMode}
       aria-label="差异详情"
+      onKeyDown={(event) => {
+        if (event.key === 'F7') {
+          event.preventDefault();
+          navigate(event.shiftKey ? -1 : 1);
+        }
+      }}
     >
       <div className="diff-reader-heading">
         <FileCode2 size={17} />
@@ -228,6 +281,30 @@ export function DiffPanel({
         )}
       </div>
       <div className="diff-reading-tools" aria-label="差异阅读选项">
+        <div className="diff-navigation" role="group" aria-label="改动导航">
+          <button
+            type="button"
+            title="上一个改动 · Shift+F7"
+            aria-label="上一个改动"
+            disabled={!hasCode || loading}
+            onClick={() => navigate(-1)}
+          >
+            <ArrowUp size={13} />
+          </button>
+          <span>
+            {currentHunk < 0 ? '改动' : currentHunk + 1} /{' '}
+            {visible.filter((l) => l.kind === 'hunk').length}
+          </span>
+          <button
+            type="button"
+            title="下一个改动 · F7"
+            aria-label="下一个改动"
+            disabled={!hasCode || loading}
+            onClick={() => navigate(1)}
+          >
+            <ArrowDown size={13} />
+          </button>
+        </div>
         <div className="diff-mode-switch" role="group" aria-label="对比方式">
           <button
             type="button"
@@ -278,6 +355,28 @@ export function DiffPanel({
           </button>
         </div>
       </div>
+      {onLines && !!diff?.hunks.length && (
+        <div className="line-selection-toolbar">
+          <span>
+            {selectedLines.length ? `已选 ${selectedLines.length} 行` : '勾选变更行，拆分一次提交'}
+          </span>
+          <button
+            className="button compact"
+            disabled={disabled || loading || !selectedLines.length}
+            onClick={() => onLines([...selectedLines].sort((a, b) => a - b))}
+          >
+            {selection?.kind === 'file' && selection.staged ? '取消暂存所选行' : '暂存所选行'}
+          </button>
+          {!!selectedLines.length && (
+            <button
+              className="button compact"
+              onClick={() => setLineSelection({ key: diffKey, positions: [] })}
+            >
+              清空选择
+            </button>
+          )}
+        </div>
+      )}
       <div
         className="diff-scroll"
         ref={scroll}
@@ -342,6 +441,7 @@ export function DiffPanel({
                     meta(line, i)
                   ) : (
                     <div className={`diff-line ${line.kind}`} key={i}>
+                      {chooseLine(line)}
                       <span className="line-number">{line.old}</span>
                       <span className="line-number">{line.next}</span>
                       <span className="line-symbol">

@@ -12,11 +12,13 @@ export function HistoryDetails({
   commit,
   version,
   renderDiff,
+  actions,
 }: {
   root: string;
   commit?: Commit;
   version: number;
   renderDiff: (diff: Diff | null, loading: boolean, error: string) => ReactNode;
+  actions?: ReactNode;
 }) {
   const [loaded, setLoaded] = useState<{ key: string; value: CommitDetails } | null>(null);
   const [error, setError] = useState('');
@@ -152,6 +154,7 @@ export function HistoryDetails({
               </p>
             )}
             <h2>{c.subject}</h2>
+            {actions}
             <div className="author-identity">
               <span className="author-avatar">{c.author.slice(0, 2).toUpperCase()}</span>
               <div>

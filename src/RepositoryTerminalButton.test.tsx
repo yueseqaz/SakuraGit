@@ -2,11 +2,14 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { isMyGo } from 'mygo-runtime';
-import { Git } from './mygo';
+import { Workbench } from './workbench-api';
 import { RepositoryTerminalButton } from './RepositoryTerminalButton';
 
 vi.mock('mygo-runtime', () => ({ isMyGo: vi.fn(() => true) }));
-vi.mock('./mygo', () => ({ Git: { openDevelopmentPath: vi.fn() } }));
+vi.mock('./workbench-api', () => ({
+  Workbench: { toggleTerminal: vi.fn() },
+  onTerminalDockChanged: () => () => {},
+}));
 afterEach(() => {
   cleanup();
   vi.resetAllMocks();
@@ -14,24 +17,19 @@ afterEach(() => {
 });
 
 it('opens the selected repository without sending a command or editor', async () => {
-  vi.mocked(Git.openDevelopmentPath).mockResolvedValue(undefined);
+  vi.mocked(Workbench.toggleTerminal).mockResolvedValue(undefined);
   const onError = vi.fn();
   render(<RepositoryTerminalButton root="/fixture/project" disabled={false} onError={onError} />);
   await act(async () => {
     fireEvent.click(screen.getByLabelText('打开仓库内置终端'));
   });
-  expect(Git.openDevelopmentPath).toHaveBeenCalledExactlyOnceWith(
-    '/fixture/project',
-    '',
-    'terminal',
-    '',
-  );
+  expect(Workbench.toggleTerminal).toHaveBeenCalledExactlyOnceWith('/fixture/project');
   expect(onError).not.toHaveBeenCalled();
 });
 
 it('deduplicates launch requests and reports startup errors', async () => {
   let reject!: (error: Error) => void;
-  vi.mocked(Git.openDevelopmentPath).mockImplementation(
+  vi.mocked(Workbench.toggleTerminal).mockImplementation(
     () =>
       new Promise((_, fail) => {
         reject = fail;
@@ -41,7 +39,7 @@ it('deduplicates launch requests and reports startup errors', async () => {
   render(<RepositoryTerminalButton root="/fixture" disabled={false} onError={onError} />);
   fireEvent.keyDown(window, { code: 'Backquote', ctrlKey: true });
   fireEvent.keyDown(window, { code: 'Backquote', metaKey: true });
-  expect(Git.openDevelopmentPath).toHaveBeenCalledTimes(1);
+  expect(Workbench.toggleTerminal).toHaveBeenCalledTimes(1);
   const error = new Error('runtime library missing');
   await act(async () => {
     reject(error);
@@ -68,5 +66,5 @@ it('never opens from browser preview, a modal, or a busy workspace', () => {
     </>,
   );
   fireEvent.keyDown(window, { code: 'Backquote', ctrlKey: true });
-  expect(Git.openDevelopmentPath).not.toHaveBeenCalled();
+  expect(Workbench.toggleTerminal).not.toHaveBeenCalled();
 });

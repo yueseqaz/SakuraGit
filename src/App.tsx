@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'rea
 import { isMyGo } from 'mygo-runtime';
 import {
   Archive,
+  ArchiveRestore,
   Globe2,
   Download,
   ArrowDown,
@@ -65,9 +66,13 @@ import type { WorkspaceSession } from './mygo';
 import { OperationBar } from './OperationBar';
 import { RepositoryTerminalButton } from './RepositoryTerminalButton';
 import { ErrorDetails, describeGitError } from './ErrorDetails';
+import { Workbench } from './workbench-api';
+import { ConflictPanel } from './ConflictPanel';
+import { RecoveryPanel } from './RecoveryPanel';
+import { HistoryActions } from './HistoryActions';
 
 const native = isMyGo();
-type View = 'changes' | 'history' | 'worktrees' | 'stashes' | 'remotes' | 'workflow';
+type View = 'changes' | 'history' | 'worktrees' | 'stashes' | 'remotes' | 'workflow' | 'recovery';
 type Modal =
   | { kind: 'open' }
   | { kind: 'branch' }
@@ -83,6 +88,7 @@ const viewNames: Record<View, string> = {
   stashes: '工作现场',
   remotes: '仓库连接',
   workflow: '开发工具',
+  recovery: '撤销与恢复',
 };
 const messageOf = (error: unknown) => describeGitError(error).raw;
 const basename = (path: string) => path.split('/').at(-1) || path;
@@ -798,6 +804,12 @@ export default function App() {
             icon={<Terminal />}
             label="开发工具"
           />
+          <NavButton
+            active={view === 'recovery'}
+            onClick={() => changeView('recovery')}
+            icon={<ArchiveRestore />}
+            label="撤销与恢复"
+          />
         </nav>
         <div className="sidebar-scroll">
           <div className="section-eyebrow branch-heading">
@@ -867,7 +879,7 @@ export default function App() {
           <div className="sidebar-version">
             <span>SakuraGit</span>
             <span>
-              v0.5.3 <span className="tiny-dot" /> MyGo
+              v0.6.0 <span className="tiny-dot" /> MyGo
             </span>
           </div>
         </div>
@@ -993,6 +1005,18 @@ export default function App() {
               <div className="sync-status">
                 {snapshot.upstream ? (
                   <>
+                    <span
+                      className={`sync-state-badge ${snapshot.ahead > 0 && snapshot.behind > 0 ? 'diverged' : ''}`}
+                      title="基于最近一次 Fetch 的本地已知远程状态，不代表已实时查询服务器"
+                    >
+                      {snapshot.ahead > 0 && snapshot.behind > 0
+                        ? '历史已分叉 · 需合并'
+                        : snapshot.behind > 0
+                          ? '有远程更新'
+                          : snapshot.ahead > 0
+                            ? '有本地提交待推送'
+                            : '已知状态已同步'}
+                    </span>
                     <span>
                       <ArrowUp size={13} />
                       {snapshot.ahead} 未推送
@@ -1013,7 +1037,7 @@ export default function App() {
                 <ShieldCheck size={17} />
                 <span>
                   {conflicts
-                    ? '存在冲突：可在开发工具中定位文件、调用外部合并工具并标记解决。'
+                    ? '存在冲突：在文件列表中选择冲突文件，打开内置三方合并；特殊文件可用外部合并工具。'
                     : snapshot.detached
                       ? '当前处于 Detached HEAD。请切换或创建分支后提交。'
                       : `正在进行 ${snapshot.state}，可在开发工具中继续或中止受支持的流程。`}
@@ -1140,30 +1164,62 @@ export default function App() {
                     </form>
                   </ResizableSplit>
                 </section>
-                <DiffPanel
-                  codeSize={preferences.codeSize}
-                  onCodeSize={(codeSize) => void savePreferences({ ...preferences, codeSize })}
-                  diff={diff}
-                  loading={diffBusy}
-                  error={diffError}
-                  selection={selection}
-                  snapshot={snapshot}
-                  onStage={stageFiles}
-                  onHunk={
-                    selection?.kind === 'file' && diff?.revision
-                      ? (id) => {
-                          const chosen = selection;
-                          const revision = diff.revision;
-                          void mutate(
-                            chosen.staged ? '取消暂存代码块' : '暂存代码块',
-                            (root) => Git.stageHunk(root, chosen.path, chosen.staged, revision, id),
-                            '所选代码块已更新，工作区文件内容保持不变。',
-                          );
-                        }
-                      : undefined
-                  }
-                  disabled={!!busy}
-                />
+                {selection?.kind === 'file' &&
+                snapshot.files.some((file) => file.path === selection.path && file.conflicted) ? (
+                  <ConflictPanel
+                    key={`${snapshot.root}:${selection.path}`}
+                    root={snapshot.root}
+                    path={selection.path}
+                    busy={!!busy}
+                    run={mutate}
+                  />
+                ) : (
+                  <DiffPanel
+                    codeSize={preferences.codeSize}
+                    onCodeSize={(codeSize) => void savePreferences({ ...preferences, codeSize })}
+                    diff={diff}
+                    loading={diffBusy}
+                    error={diffError}
+                    selection={selection}
+                    snapshot={snapshot}
+                    onStage={stageFiles}
+                    onLines={
+                      selection?.kind === 'file' && !!diff?.hunks.length
+                        ? (positions) => {
+                            const chosen = selection;
+                            const revision = diff.revision;
+                            void mutate(
+                              chosen.staged ? '取消暂存所选行' : '暂存所选行',
+                              (root) =>
+                                Workbench.stageLines(
+                                  root,
+                                  chosen.path,
+                                  chosen.staged,
+                                  revision,
+                                  positions,
+                                ),
+                              '所选行已更新，工作区文件保持不变。',
+                            );
+                          }
+                        : undefined
+                    }
+                    onHunk={
+                      selection?.kind === 'file' && diff?.revision
+                        ? (id) => {
+                            const chosen = selection;
+                            const revision = diff.revision;
+                            void mutate(
+                              chosen.staged ? '取消暂存代码块' : '暂存代码块',
+                              (root) =>
+                                Git.stageHunk(root, chosen.path, chosen.staged, revision, id),
+                              '所选代码块已更新，工作区文件内容保持不变。',
+                            );
+                          }
+                        : undefined
+                    }
+                    disabled={!!busy}
+                  />
+                )}
               </ResizableSplit>
             )}
             {view === 'history' && (
@@ -1189,6 +1245,18 @@ export default function App() {
                 />
                 <HistoryDetails
                   root={snapshot.root}
+                  actions={
+                    <HistoryActions
+                      snapshot={snapshot}
+                      commit={
+                        selection?.kind === 'commit'
+                          ? history.commits.find((c) => c.hash === selection.hash)
+                          : undefined
+                      }
+                      busy={!!busy}
+                      run={mutate}
+                    />
+                  }
                   commit={
                     selection?.kind === 'commit'
                       ? history.commits.find((c) => c.hash === selection.hash)
@@ -1253,6 +1321,15 @@ export default function App() {
                   setView('changes');
                   setSelection({ kind: 'file', path, staged: false });
                 }}
+              />
+            )}
+            {view === 'recovery' && (
+              <RecoveryPanel
+                key={snapshot.root}
+                snapshot={snapshot}
+                version={diffVersion}
+                busy={!!busy}
+                run={mutate}
               />
             )}
             {view === 'worktrees' && (
@@ -1401,7 +1478,34 @@ export default function App() {
         <div className={`toast ${notice.kind}`} role={notice.kind === 'error' ? 'alert' : 'status'}>
           {notice.kind === 'error' ? <XCircle size={19} /> : <CheckCircle2 size={19} />}
           {notice.kind === 'error' ? (
-            <ErrorDetails message={notice.text} alert={false} />
+            <div>
+              <ErrorDetails message={notice.text} alert={false} />
+              {snapshot && (
+                <div className="error-next-actions">
+                  <button
+                    className="button compact"
+                    onClick={() => {
+                      setNotice(null);
+                      changeView('workflow');
+                    }}
+                  >
+                    检查分支与冲突
+                  </button>
+                  <button
+                    className="button compact"
+                    disabled={!native}
+                    onClick={() => {
+                      setNotice(null);
+                      void Git.openDevelopmentPath(snapshot.root, '', 'terminal', '').catch((e) =>
+                        setNotice({ kind: 'error', text: messageOf(e) }),
+                      );
+                    }}
+                  >
+                    打开底部终端
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
             <span>{notice.text}</span>
           )}

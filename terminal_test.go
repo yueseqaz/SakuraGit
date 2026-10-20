@@ -82,7 +82,7 @@ func TestTerminalRejectsUnopenedRepositoryAndIsolatedMode(t *testing.T) {
 func TestTerminalDeduplicatesPendingOpenAndLimitsSessions(t *testing.T) {
 	g := &Git{}
 	root := t.TempDir()
-	g.terminals.sessions = map[string]*repositoryTerminal{root: {ready: make(chan struct{})}}
+	g.terminals.sessions = map[string]*repositoryTerminal{root: {root: root, ready: make(chan struct{})}}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	if err := g.openRepositoryTerminal(ctx, root); !errors.Is(err, context.Canceled) {
@@ -232,5 +232,61 @@ func TestTerminalNativeViewInputClipboardAndAppearance(t *testing.T) {
 	tt.Frame()
 	if term.ExitCode() != 7 || !tt.HasText("Shell 已退出（7）") {
 		t.Fatalf("view did not retain the exited session: %v", tt.Texts())
+	}
+}
+
+func TestDockScopesTabsToRepositoryAndKeepsPTYInput(t *testing.T) {
+	first, second := newFixtureTerminal(t), newFixtureTerminal(t)
+	ready := make(chan struct{})
+	close(ready)
+	s1 := &repositoryTerminal{id: "1", root: "/fixture/project", ready: ready, term: first}
+	s2 := &repositoryTerminal{id: "2", root: "/fixture/project", ready: ready, term: second}
+	s1.focus.Store(true)
+	g := &Git{}
+	g.terminals.sessions = map[string]*repositoryTerminal{
+		"1": s1, "2": s2,
+		"hidden": {id: "hidden", root: "/different/repository", ready: ready, term: first},
+	}
+	g.terminals.active = map[string]string{"/fixture/project": "1"}
+	d := &desktopWorkbench{git: g, root: "/fixture/project", palette: "mist"}
+	tt := ui.NewTester(d.terminalView, 1080, 350)
+	if !tt.HasText("/fixture/project") || tt.HasText("/different/repository") || !tt.Focused("Terminal") {
+		t.Fatal("dock showed the wrong repository or lost focus", tt.Texts())
+	}
+	if err := tt.Click("Shell 2"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	if g.terminals.active[d.root] != "2" {
+		t.Fatal("tab did not switch")
+	}
+	if err := tt.Click("Terminal"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Type("fixture-input")
+	tt.Key(0, ui.KeyEnter)
+	select {
+	case <-second.Done():
+	case <-time.After(20 * time.Second):
+		t.Fatal("dock did not forward input to active PTY")
+	}
+	if !terminalRunning(first.Done()) {
+		t.Fatal("switching tabs stopped the background session")
+	}
+	if err := os.MkdirAll("build", 0755); err != nil {
+		t.Fatal(err)
+	}
+	for _, dark := range []bool{false, true} {
+		tt.SetDark(dark)
+		tt.Frame()
+		f, err := os.Create(filepath.Join("build", fmt.Sprintf("terminal-ui-%s-dock-dark-%t.png", runtime.GOOS, dark)))
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = png.Encode(f, tt.Image())
+		_ = f.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 }

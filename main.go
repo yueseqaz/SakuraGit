@@ -42,6 +42,7 @@ type Git struct {
 	exitPrompt   bool
 	exitApproved bool
 	terminals    repositoryTerminals
+	desktop      *desktopWorkbench
 }
 
 func (g *Git) Bootstrap() (Startup, error) {
@@ -81,6 +82,9 @@ func (g *Git) Open(ctx context.Context, path string) (gitrepo.Snapshot, error) {
 	s, err := g.engine.Open(ctx, path)
 	if err != nil {
 		return s, err
+	}
+	if g.desktop != nil {
+		g.desktop.setRoot(s.Root)
 	}
 	g.mu.Lock()
 	defer g.mu.Unlock()
@@ -184,7 +188,7 @@ func main() {
 		log.Fatal("--smoke requires --repo")
 	}
 	mygo.App.SetName("SakuraGit")
-	mygo.App.SetVersion("0.5.3")
+	mygo.App.SetVersion("0.6.0")
 	// Keep the pre-rename data location so existing sessions and drafts survive.
 	if dir, err := mygo.App.Path(mygo.PathAppData); err == nil {
 		mygo.App.SetPath(mygo.PathUserData, filepath.Join(dir, "Gitlane"))
@@ -216,11 +220,16 @@ func main() {
 		if *smoke {
 			stateKey = ""
 		}
-		win := mygo.NewWindow(mygo.WindowOptions{
-			Title: "SakuraGit", URL: "/", Width: 1440, Height: 920, MinWidth: 900, MinHeight: 620,
-			TitleBarStyle: mygo.TitleBarHiddenInset, TitleBarHeight: 48, BackgroundColor: background, StateKey: stateKey,
-			Page: mygo.PageOptions{PreloadScript: desktopGuard},
-		})
+		var win *mygo.Window
+		if !*smoke {
+			win = newDesktopWorkbench(service, background, stateKey, prefs)
+		} else {
+			win = mygo.NewWindow(mygo.WindowOptions{
+				Title: "SakuraGit", URL: "/", Width: 1440, Height: 920, MinWidth: 900, MinHeight: 620,
+				TitleBarStyle: mygo.TitleBarHiddenInset, TitleBarHeight: 48, BackgroundColor: background, StateKey: stateKey,
+				Page: mygo.PageOptions{PreloadScript: desktopGuard},
+			})
+		}
 		if !*smoke {
 			win.OnClose(func(e *mygo.CloseEvent) {
 				if service.protectExit(win, false) || service.protectTerminals(win, false) {

@@ -36,7 +36,7 @@ func validateSession(s WorkspaceSession) error {
 	if s.Root != "" && !filepath.IsAbs(s.Root) {
 		return errors.New("会话仓库必须是绝对路径")
 	}
-	if s.View != "changes" && s.View != "history" && s.View != "worktrees" && s.View != "stashes" && s.View != "remotes" && s.View != "workflow" {
+	if s.View != "changes" && s.View != "history" && s.View != "worktrees" && s.View != "stashes" && s.View != "remotes" && s.View != "workflow" && s.View != "recovery" {
 		return errors.New("无效的会话页面")
 	}
 	if s.Kind != "" && s.Kind != "file" && s.Kind != "commit" && s.Kind != "stash" {

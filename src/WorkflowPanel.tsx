@@ -128,7 +128,7 @@ export function WorkflowPanel({
                     className="button compact"
                     onClick={() => onSelectConflict(conflict.path)}
                   >
-                    定位差异
+                    三方合并
                   </button>
                   <button
                     className="button compact"
