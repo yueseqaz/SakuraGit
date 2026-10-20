@@ -30,7 +30,7 @@ SakuraGit 是一个使用 **MyGo + Go + React + TypeScript** 构建的轻量 Git
 | 阅读与布局 | 雾霾蓝 / 石墨灰，浅色 / 深色 / 跟随系统；可拖动面板、比例记忆、会话与草稿恢复 |
 | 操作状态 | 克隆与同步进度、耗时、取消、中文错误指引，以及写操作期间的退出保护 |
 
-支持继续 / 中止已由 Git 启动的 Merge、Rebase、Cherry-pick 和 Revert 流程；这不是任意 Git 命令终端，也不是内置三方合并编辑器。Worktree 目前支持查看和打开。
+支持继续 / 中止已由 Git 启动的 Merge、Rebase、Cherry-pick 和 Revert 流程；这些按钮不接受任意 Git 命令，也不是内置三方合并编辑器。需要手动执行命令时可打开下述内置终端。Worktree 目前支持查看和打开。
 
 ![SakuraGit 提交历史](docs/screenshots/history.png)
 

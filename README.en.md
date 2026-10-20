@@ -29,7 +29,7 @@ SakuraGit is a lightweight Git desktop client built with **MyGo, Go, React, and 
 | Appearance | Mist-blue / graphite themes, light / dark / system appearance, persistent split-panel sizes, session and draft recovery |
 | Operation status | Clone and synchronization progress, elapsed time, cancellation, error guidance, and protection when quitting during writes |
 
-Workflow continuation / abort supports Git-initiated Merge, Rebase, Cherry-pick, and Revert operations. This is not an arbitrary Git command terminal or an integrated three-way merge editor. Worktree support currently covers listing and opening existing worktrees.
+Workflow continuation / abort supports Git-initiated Merge, Rebase, Cherry-pick, and Revert operations. These buttons do not accept arbitrary Git commands and are not an integrated three-way merge editor; use the built-in terminal below for manual commands. Worktree support currently covers listing and opening existing worktrees.
 
 ![SakuraGit commit history](docs/screenshots/history.png)
 
