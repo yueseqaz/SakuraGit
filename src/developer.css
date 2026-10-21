@@ -16,6 +16,16 @@
   gap: 8px;
   align-items: center;
 }
+.developer-command-actions .button.primary {
+  background: var(--green);
+  border-color: var(--green);
+  color: var(--on-accent);
+}
+.developer-command-actions .button.primary:disabled {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--muted);
+}
 .developer-tabs {
   padding-bottom: 16px;
   border-bottom: 1px solid var(--line);

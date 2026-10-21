@@ -9,7 +9,7 @@ export function BinaryViewer({
   loading: boolean;
   onPage: (offset: number) => void;
 }) {
-  const data = atob(preview.data);
+  const data = preview.image ? '' : atob(preview.data);
   const rows: string[] = [];
   if (!preview.image)
     for (let i = 0; i < data.length; i += 16) {

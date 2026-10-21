@@ -4,6 +4,16 @@ import { call, event } from "mygo-runtime";
 
 // ---- Types ----
 
+export interface BinaryPreview {
+  path: string;
+  size: number;
+  offset: number;
+  data: string;
+  mime: string;
+  image: boolean;
+  more: boolean;
+}
+
 export interface Branch {
   name: string;
   current: boolean;
@@ -65,6 +75,11 @@ export interface ConflictDetails {
   state: string;
 }
 
+export interface DeveloperConfig {
+  variables: Variable[];
+  commands: QuickCommand[];
+}
+
 export interface Diagnostics {
   version: string;
   name: string;
@@ -96,6 +111,14 @@ export interface EditorFile {
   path: string;
   content: string;
   revision: string;
+}
+
+export interface Environment {
+  shell: string;
+  source: string;
+  warning: string;
+  variables: Variable[];
+  tools: Tool[];
 }
 
 export interface File {
@@ -148,6 +171,13 @@ export interface Preferences {
   palette: string;
   appearance: string;
   codeSize: number;
+}
+
+export interface QuickCommand {
+  id: string;
+  name: string;
+  command: string;
+  directory: string;
 }
 
 export interface Recent {
@@ -208,6 +238,17 @@ export interface Stash {
   date: string;
 }
 
+export interface Tool {
+  name: string;
+  path: string;
+  version: string;
+}
+
+export interface Variable {
+  name: string;
+  value: string;
+}
+
 export interface WorkflowInfo {
   revision: string;
   state: string;
@@ -238,7 +279,10 @@ export interface Worktree {
 
 // ---- Services ----
 
-/** Git exposes only repository-scoped operations, never arbitrary shell commands. */
+/**
+ * Git keeps Git operations repository-scoped; user-authored developer commands
+ * run only on explicit request in a separate, visible terminal session.
+ */
 export const Git = {
   bootstrap(): Promise<Startup> {
     return call("Git.Bootstrap");
@@ -288,6 +332,12 @@ export const Git = {
   createRepository(source: string, destination: string, initialize: boolean): Promise<Snapshot> {
     return call("Git.CreateRepository", source, destination, initialize);
   },
+  developerConfig(root: string): Promise<DeveloperConfig> {
+    return call("Git.DeveloperConfig", root);
+  },
+  developmentEnvironment(root: string, refresh: boolean): Promise<Environment> {
+    return call("Git.DevelopmentEnvironment", root, refresh);
+  },
   diagnostics(root: string): Promise<Diagnostics> {
     return call("Git.Diagnostics", root);
   },
@@ -305,6 +355,9 @@ export const Git = {
   },
   editorFile(root: string, path: string): Promise<EditorFile> {
     return call("Git.EditorFile", root, path);
+  },
+  editorPreview(root: string, path: string, offset: number): Promise<BinaryPreview> {
+    return call("Git.EditorPreview", root, path, offset);
   },
   fileBackups(root: string): Promise<FileBackup[]> {
     return call("Git.FileBackups", root);
@@ -351,8 +404,14 @@ export const Git = {
   restoreStash(root: string, hash: string, restoreIndex: boolean): Promise<Result> {
     return call("Git.RestoreStash", root, hash, restoreIndex);
   },
+  runDeveloperCommand(root: string, expected: QuickCommand): Promise<void> {
+    return call("Git.RunDeveloperCommand", root, expected);
+  },
   saveConflict(root: string, path: string, revision: string, result: string): Promise<Result> {
     return call("Git.SaveConflict", root, path, revision, result);
+  },
+  saveDeveloperConfig(root: string, c: DeveloperConfig): Promise<void> {
+    return call("Git.SaveDeveloperConfig", root, c);
   },
   saveEditorFile(root: string, path: string, revision: string, content: string): Promise<EditorFile> {
     return call("Git.SaveEditorFile", root, path, revision, content);

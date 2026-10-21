@@ -303,6 +303,27 @@ try {
     assert.deepEqual(failures, []);
     await page.close();
   }
+  {
+    const { page, failures } = await fixture('mist', 'dark', false, { width: 390, height: 780 });
+    await page.getByRole('button', { name: '快捷启动', exact: true }).click();
+    await page.getByRole('tab', { name: '开发环境', exact: true }).click();
+    await page.getByText('UI fixture only', { exact: false }).waitFor();
+    const rect = await page.getByRole('dialog').boundingBox();
+    assert.ok(
+      rect &&
+        rect.x >= 0 &&
+        rect.x + rect.width <= 391 &&
+        rect.y >= 0 &&
+        rect.y + rect.height <= 781,
+    );
+    assert.equal(
+      await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1),
+      false,
+    );
+    await page.screenshot({ path: `${output}/development-mobile.png` });
+    assert.deepEqual(failures, []);
+    await page.close();
+  }
   for (const mode of ['light', 'dark']) {
     const { page, failures } = await fixture('mist', mode, true);
     await page.getByLabel('合并结果代码').waitFor();

@@ -100,6 +100,9 @@ func selectedVariables(values map[string]string) []Variable {
 	}
 	return result
 }
+func loginEnvironmentScript(marker string) string {
+	return "printf '\\000%s\\000' '" + marker + "'; /usr/bin/env -0"
+}
 func Detect(ctx context.Context) Environment {
 	e := Environment{Source: "进程环境", Variables: []Variable{}, Tools: []Tool{}}
 	values := ParseEnvironment([]byte(strings.Join(os.Environ(), "\x00")))
@@ -124,7 +127,7 @@ func Detect(ctx context.Context) Environment {
 			}
 		} else {
 			marker := rand.Text()
-			data, err = output(probeCtx, home, os.Environ(), []string{shell, "-l", "-i", "-c", "printf '\\0" + marker + "\\0'; /usr/bin/env -0"}, 256<<10)
+			data, err = output(probeCtx, home, os.Environ(), []string{shell, "-l", "-i", "-c", loginEnvironmentScript(marker)}, 256<<10)
 			start := bytes.Index(data, []byte("\x00"+marker+"\x00"))
 			if err == nil && start >= 0 {
 				values = ParseEnvironment(data[start+len(marker)+2:])

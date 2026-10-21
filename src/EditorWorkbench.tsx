@@ -472,11 +472,13 @@ export function EditorWorkbench({
                 key={`${id}:${epochs[id] || 0}`}
               >
                 {d.preview ? (
-                  <BinaryViewer
-                    preview={d.preview}
-                    loading={working}
-                    onPage={(offset) => void previewPage(id, offset)}
-                  />
+                  id === selectedID && visible ? (
+                    <BinaryViewer
+                      preview={d.preview}
+                      loading={working}
+                      onPage={(offset) => void previewPage(id, offset)}
+                    />
+                  ) : null
                 ) : (
                   <EditorSurface
                     searchRequest={searchRequest?.id === id ? searchRequest.sequence : undefined}
