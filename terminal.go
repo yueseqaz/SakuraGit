@@ -12,6 +12,7 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/plugins/terminal"
 	"github.com/egoist/mygo/ui"
+	"github.com/yueseqaz/SakuraGit/internal/devtools"
 )
 
 type repositoryTerminals struct {
@@ -23,6 +24,7 @@ type repositoryTerminals struct {
 }
 type repositoryTerminal struct {
 	id, root string
+	label    string
 	sequence uint64
 	ready    chan struct{}
 	win      *mygo.Window
@@ -36,6 +38,15 @@ func (g *Git) openRepositoryTerminal(ctx context.Context, root string) error {
 }
 
 func (g *Git) createRepositoryTerminal(ctx context.Context, root string, fresh bool) error {
+	return g.createRepositoryTerminalWithLaunch(ctx, root, fresh, nil)
+}
+
+type terminalLaunch struct {
+	label, dir   string
+	command, env []string
+}
+
+func (g *Git) createRepositoryTerminalWithLaunch(ctx context.Context, root string, fresh bool, launch *terminalLaunch) error {
 	if g.ephemeral {
 		return errors.New("隔离测试模式不允许启动交互式终端")
 	}
@@ -78,6 +89,9 @@ func (g *Git) createRepositoryTerminal(ctx context.Context, root string, fresh b
 	}
 	g.terminals.sequence++
 	s := &repositoryTerminal{id: rand.Text(), root: root, sequence: g.terminals.sequence, ready: make(chan struct{}), win: g.desktop.win}
+	if launch != nil {
+		s.label = launch.label
+	}
 	if g.terminals.sessions == nil {
 		g.terminals.sessions = map[string]*repositoryTerminal{}
 	}
@@ -87,6 +101,19 @@ func (g *Git) createRepositoryTerminal(ctx context.Context, root string, fresh b
 	g.terminals.sessions[s.id] = s
 	g.terminals.mu.Unlock()
 	opts := repositoryTerminalOptions(root)
+	if launch != nil {
+		opts.Command, opts.Dir = launch.command, launch.dir
+		opts.Env = append(opts.Env, launch.env...)
+	} else {
+		// GUI launches often miss nvm/SDK paths; use the same captured login environment.
+		e := g.shellEnvironment(ctx, false)
+		variables := devtools.EffectiveVariables(e.Variables, nil)
+		if c, err := g.DeveloperConfig(ctx, root); err == nil {
+			variables = devtools.EffectiveVariables(e.Variables, c.Variables)
+		}
+		opts.Env = append(opts.Env, devtools.Env(variables)...)
+	}
+	opts.Env = append(opts.Env, "GIT_TERMINAL_PROMPT=1")
 	opts.OnKey = func(mods ui.Modifiers, key ui.Key) bool {
 		if terminalDockShortcut(mods, key) {
 			g.desktop.hide()

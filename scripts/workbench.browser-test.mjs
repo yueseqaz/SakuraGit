@@ -95,6 +95,42 @@ try {
                 truncated: false,
               },
               'Git.EditorFile': editorFile,
+              'Git.EditorPreview': {
+                path: args[1],
+                size: 9000,
+                offset: args[2],
+                data: btoa('\x00\xffABC'),
+                mime: '',
+                image: false,
+                more: true,
+              },
+              'Git.DeveloperConfig': {
+                variables: [],
+                commands: [
+                  { id: 'dev', name: '启动开发服务', command: 'npm run dev', directory: '' },
+                ],
+              },
+              'Git.DevelopmentEnvironment': {
+                shell: '/bin/zsh',
+                source: 'UI fixture only',
+                warning: '',
+                variables: [{ name: 'PATH', value: '/opt/tools/bin:/usr/bin:/bin' }],
+                tools: [
+                  'java',
+                  'javac',
+                  'go',
+                  'php',
+                  'node',
+                  'npm',
+                  'pnpm',
+                  'yarn',
+                  'composer',
+                ].map((name) => ({
+                  name,
+                  path: '/opt/tools/bin/' + name,
+                  version: 'fixture version',
+                })),
+              },
               'Git.Bootstrap': {
                 path: snapshot.root,
                 recents: [{ name: snapshot.name, path: snapshot.root }],
@@ -138,6 +174,10 @@ try {
               },
               'Git.FileBackups': [],
             };
+            if (method === 'Git.EditorFile' && args[1] === 'bytes.bin')
+              throw new Error('Binary fixture is not editable text');
+            if (method === 'Git.RunDeveloperCommand' || method === 'Git.SaveDeveloperConfig')
+              return;
             if (method === 'Git.SaveConflict' || method === 'Git.StageLines')
               return { output: 'fixture only' };
             if (method === 'Git.SaveEditorFile') {
@@ -223,6 +263,46 @@ try {
       assert.deepEqual(failures, []);
       await page.close();
     }
+  for (const mode of ['light', 'dark']) {
+    const { page, failures } = await fixture('mist', mode);
+    await page.getByRole('button', { name: '代码编辑器', exact: true }).click();
+    await page.getByLabel('仓库相对文件路径').fill('bytes.bin');
+    await page.getByRole('button', { name: '打开', exact: true }).click();
+    await page.getByLabel('二进制只读预览').waitFor();
+    assert.equal(await page.getByRole('button', { name: '保存', exact: true }).isDisabled(), true);
+    await page.screenshot({ path: `${output}/binary-${mode}.png` });
+    await page.getByRole('button', { name: '下一页', exact: true }).click();
+    await page.waitForFunction(() =>
+      window.__fixtureCalls.some((c) => c.method === 'Git.EditorPreview' && c.args[2] === 4096),
+    );
+    await page.getByRole('button', { name: '快捷启动', exact: true }).click();
+    await page.getByRole('button', { name: '运行', exact: true }).waitFor();
+    await page.getByRole('tab', { name: '开发环境', exact: true }).click();
+    await page.getByText('UI fixture only', { exact: false }).waitFor();
+    await page.screenshot({ path: `${output}/environment-${mode}.png` });
+    assert.equal(
+      await page.evaluate(() =>
+        window.__fixtureCalls.some((c) => c.method === 'Git.RunDeveloperCommand'),
+      ),
+      false,
+    );
+    await page.getByRole('tab', { name: '快捷命令', exact: true }).click();
+    await page.getByRole('button', { name: '运行', exact: true }).click();
+    await page.screenshot({ path: `${output}/commands-${mode}.png` });
+    await page.getByRole('button', { name: '确认并在终端运行', exact: true }).click();
+    await page.waitForFunction(() =>
+      window.__fixtureCalls.some((c) => c.method === 'Git.RunDeveloperCommand'),
+    );
+    const call = await page.evaluate(() =>
+      window.__fixtureCalls.find((c) => c.method === 'Git.RunDeveloperCommand'),
+    );
+    assert.deepEqual(call.args, [
+      demoSnapshot.root,
+      { id: 'dev', name: '启动开发服务', command: 'npm run dev', directory: '' },
+    ]);
+    assert.deepEqual(failures, []);
+    await page.close();
+  }
   for (const mode of ['light', 'dark']) {
     const { page, failures } = await fixture('mist', mode, true);
     await page.getByLabel('合并结果代码').waitFor();

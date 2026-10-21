@@ -26,6 +26,7 @@ import {
   LoaderCircle,
   Minus,
   Plus,
+  Play,
   RefreshCw,
   Search,
   Settings,
@@ -71,6 +72,7 @@ import { ConflictPanel } from './ConflictPanel';
 import { RecoveryPanel } from './RecoveryPanel';
 import { HistoryActions } from './HistoryActions';
 import { EditorWorkbench } from './EditorWorkbench';
+import { DeveloperPanel } from './DeveloperPanel';
 
 const native = isMyGo();
 type View =
@@ -149,6 +151,7 @@ export default function App() {
   const [input, setInput] = useState('');
   const [remote, setRemote] = useState('');
   const [showSettings, setShowSettings] = useState(false);
+  const [developerTab, setDeveloperTab] = useState<'commands' | 'environment' | null>(null);
   const [preferences, setPreferences] = useState<Preferences>(cachedPreferences);
   const [savingPreferences, setSavingPreferences] = useState(false);
   const preferencesBusy = useRef(false);
@@ -897,7 +900,7 @@ export default function App() {
           <div className="sidebar-version">
             <span>SakuraGit</span>
             <span>
-              v0.7.0 <span className="tiny-dot" /> MyGo
+              v0.8.0 <span className="tiny-dot" /> MyGo
             </span>
           </div>
         </div>
@@ -913,6 +916,15 @@ export default function App() {
             <strong>{viewNames[view]}</strong>
           </div>
           <div className="topbar-tools">
+            <button
+              className="button compact"
+              disabled={!native || !snapshot || !!busy}
+              onClick={() => setDeveloperTab('commands')}
+              title="配置并运行此仓库的开发命令"
+            >
+              <Play size={15} />
+              快捷启动
+            </button>
             <RepositoryTerminalButton
               root={snapshot?.root}
               disabled={!!busy}
@@ -1585,10 +1597,32 @@ export default function App() {
             value={preferences}
             saving={savingPreferences}
             onChange={(p) => void savePreferences(p)}
+            onDevelopment={
+              snapshot && native
+                ? () => {
+                    setShowSettings(false);
+                    setDeveloperTab('environment');
+                  }
+                : undefined
+            }
           />
         </Dialog>
       )}
-      {modal && !showSettings && !showNewRepository && (
+      {developerTab && snapshot && !showSettings && (
+        <Dialog className="developer-dialog" onClose={() => setDeveloperTab(null)}>
+          <DeveloperPanel
+            key={snapshot.root}
+            root={snapshot.root}
+            initialTab={developerTab}
+            onClose={() => setDeveloperTab(null)}
+            onStarted={() => {
+              setDeveloperTab(null);
+              setNotice({ kind: 'success', text: '命令已在底部终端启动，收起面板不会结束程序。' });
+            }}
+          />
+        </Dialog>
+      )}
+      {modal && !showSettings && !showNewRepository && !developerTab && (
         <Dialog onClose={() => !busy && setModal(null)}>
           <form onSubmit={modalSubmit}>
             <div className="modal-kicker">

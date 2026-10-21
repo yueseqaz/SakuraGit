@@ -6,10 +6,12 @@ export function SettingsPanel({
   value,
   saving,
   onChange,
+  onDevelopment,
 }: {
   value: Preferences;
   saving: boolean;
   onChange: (p: Preferences) => void;
+  onDevelopment?: () => void;
 }) {
   return (
     <div className="settings-content">
@@ -93,9 +95,19 @@ export function SettingsPanel({
           ))}
         </select>
       </div>
+      {onDevelopment && (
+        <div className="setting-size">
+          <label>
+            开发环境与快捷启动 <small>检测 JDK / Go / PHP / Node，配置仓库命令</small>
+          </label>
+          <button className="button compact" onClick={onDevelopment}>
+            配置开发环境
+          </button>
+        </div>
+      )}
       <div className="settings-footnote">
         {saving ? '正在保存…' : '自动保存 · 下次启动继续使用'}
-        <span>SakuraGit 0.7.0 / MyGo</span>
+        <span>SakuraGit 0.8.0 / MyGo</span>
       </div>
     </div>
   );

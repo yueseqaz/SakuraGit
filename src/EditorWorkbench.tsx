@@ -3,6 +3,7 @@ import { isMyGo } from 'mygo-runtime';
 import { ChevronRight, FileCode2, Folder, RefreshCw, Save, X } from 'lucide-react';
 import { Git, type EditorDirectory, type EditorFile, type Snapshot } from './mygo';
 import { EditorSurface } from './EditorSurface';
+import { BinaryViewer } from './BinaryViewer';
 import { Dialog } from './Dialog';
 import { ErrorDetails } from './ErrorDetails';
 import { ResizableSplit } from './ResizableSplit';
@@ -210,11 +211,8 @@ export function EditorWorkbench({
     setWorking(true);
     setError('');
     try {
-      const d = await Git.editorFile(root, file);
-      update([
-        ...docs.current,
-        { root, path: d.path, content: d.content, original: d.content, revision: d.revision },
-      ]);
+      const d = await readDocument(root, file);
+      update([...docs.current, d]);
       if (rootRef.current === root) setActive(id);
     } catch (e) {
       setError(String(e));
@@ -228,7 +226,7 @@ export function EditorWorkbench({
   }, [requested?.sequence]);
   // An external edit never overwrites a buffer. Saving also checks the exact revision in Go.
   useEffect(() => {
-    if (!native || !visible || !selected) return;
+    if (!native || !visible || !selected || selected.preview) return;
     const { root, path, revision } = selected;
     let alive = true;
     const check = () => {
@@ -251,7 +249,14 @@ export function EditorWorkbench({
   }, [native, visible, selectedID, selected?.revision]);
   const save = async (id: string) => {
     const d = docs.current.find((d) => documentID(d.root, d.path) === id);
-    if (!d || !dirtyDocument(d) || busy || pending.current.size || d.root !== rootRef.current)
+    if (
+      !d ||
+      d.preview ||
+      !dirtyDocument(d) ||
+      busy ||
+      pending.current.size ||
+      d.root !== rootRef.current
+    )
       return;
     pending.current.add(id);
     setWorking(true);
@@ -295,18 +300,12 @@ export function EditorWorkbench({
     pending.current.add(id);
     setWorking(true);
     try {
-      const disk = await Git.editorFile(d.root, d.path);
+      const disk = await readDocument(d.root, d.path);
       if (
         docs.current.find((item) => documentID(item.root, item.path) === id)?.content !== d.content
       )
         throw new Error('读取期间又有新编辑，已保留内容，请重新确认。');
-      update(
-        docs.current.map((item) =>
-          item === d
-            ? { ...d, content: disk.content, original: disk.content, revision: disk.revision }
-            : item,
-        ),
-      );
+      update(docs.current.map((item) => (item === d ? disk : item)));
       setEpochs((s) => ({ ...s, [id]: (s[id] || 0) + 1 }));
       setExternal((s) => ({ ...s, [id]: false }));
       setConfirm(null);
@@ -322,6 +321,22 @@ export function EditorWorkbench({
     const id = documentID(d.root, d.path);
     if (dirtyDocument(d)) setConfirm({ id, action });
     else void perform(id, action);
+  };
+  const previewPage = async (id: string, offset: number) => {
+    const d = docs.current.find((d) => documentID(d.root, d.path) === id);
+    if (!d?.preview || pending.current.size) return;
+    pending.current.add(id);
+    setWorking(true);
+    try {
+      const preview = await Git.editorPreview(d.root, d.path, offset);
+      update(docs.current.map((item) => (item === d ? { ...d, preview } : item)));
+      setError('');
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      pending.current.delete(id);
+      setWorking(false);
+    }
   };
   return (
     <div className="editor-workspace" hidden={!visible}>
@@ -420,6 +435,7 @@ export function EditorWorkbench({
                 </button>
                 <button
                   className="button compact"
+                  disabled={!!selected.preview}
                   onClick={() =>
                     setSearchRequest({
                       id: selectedID,
@@ -455,34 +471,44 @@ export function EditorWorkbench({
                 hidden={id !== selectedID}
                 key={`${id}:${epochs[id] || 0}`}
               >
-                <EditorSurface
-                  searchRequest={searchRequest?.id === id ? searchRequest.sequence : undefined}
-                  path={d.path}
-                  content={d.content}
-                  visible={visible && id === selectedID}
-                  onSave={() => void save(id)}
-                  onChange={(content) =>
-                    update(
-                      docs.current.map((item) =>
-                        documentID(item.root, item.path) === id ? { ...item, content } : item,
-                      ),
-                    )
-                  }
-                  onCursor={(line, column) => {
-                    if (id === selectedID) setCursor({ line, column });
-                  }}
-                  onLanguageError={() =>
-                    setError(`语言组件加载失败：${d.path}。仍可按纯文本编辑和保存。`)
-                  }
-                />
+                {d.preview ? (
+                  <BinaryViewer
+                    preview={d.preview}
+                    loading={working}
+                    onPage={(offset) => void previewPage(id, offset)}
+                  />
+                ) : (
+                  <EditorSurface
+                    searchRequest={searchRequest?.id === id ? searchRequest.sequence : undefined}
+                    path={d.path}
+                    content={d.content}
+                    visible={visible && id === selectedID}
+                    onSave={() => void save(id)}
+                    onChange={(content) =>
+                      update(
+                        docs.current.map((item) =>
+                          documentID(item.root, item.path) === id ? { ...item, content } : item,
+                        ),
+                      )
+                    }
+                    onCursor={(line, column) => {
+                      if (id === selectedID) setCursor({ line, column });
+                    }}
+                    onLanguageError={() =>
+                      setError(`语言组件加载失败：${d.path}。仍可按纯文本编辑和保存。`)
+                    }
+                  />
+                )}
               </div>
             );
           })}
           <footer className="editor-status">
             <span>
-              {selected
-                ? `Ln ${cursor.line}, Col ${cursor.column} · UTF-8 · ${selected.content.includes('\r\n') ? 'CRLF' : 'LF'}`
-                : 'CodeMirror 6 · 本地编辑'}
+              {selected?.preview
+                ? '二进制 · 只读预览'
+                : selected
+                  ? `Ln ${cursor.line}, Col ${cursor.column} · UTF-8 · ${selected.content.includes('\r\n') ? 'CRLF' : 'LF'}`
+                  : 'CodeMirror 6 · 本地编辑'}
             </span>
             <span>
               {documents.filter(dirtyDocument).length} 个未保存（跨仓库） · 保存前自动备份 ·
@@ -514,4 +540,18 @@ export function EditorWorkbench({
       )}
     </div>
   );
+}
+
+async function readDocument(root: string, path: string): Promise<EditorDocument> {
+  try {
+    const d = await Git.editorFile(root, path);
+    return { root, path: d.path, content: d.content, original: d.content, revision: d.revision };
+  } catch (textError) {
+    try {
+      const preview = await Git.editorPreview(root, path, 0);
+      return { root, path: preview.path, content: '', original: '', revision: '', preview };
+    } catch {
+      throw textError;
+    }
+  }
 }

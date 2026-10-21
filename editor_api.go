@@ -14,6 +14,9 @@ func (g *Git) EditorDirectory(ctx context.Context, root, path string) (gitrepo.E
 func (g *Git) EditorFile(ctx context.Context, root, path string) (gitrepo.EditorFile, error) {
 	return g.engine.EditorFile(ctx, root, path)
 }
+func (g *Git) EditorPreview(ctx context.Context, root, path string, offset int64) (gitrepo.BinaryPreview, error) {
+	return g.engine.EditorPreview(ctx, root, path, offset)
+}
 func (g *Git) SaveEditorFile(ctx context.Context, root, path, revision, content string) (gitrepo.EditorFile, error) {
 	return withOperation(g, ctx, "保存文件", false, func(ctx context.Context) (gitrepo.EditorFile, error) {
 		return g.engine.SaveEditorFile(ctx, root, path, revision, content)

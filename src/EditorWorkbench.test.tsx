@@ -9,6 +9,7 @@ vi.mock('./mygo', () => ({
   Git: {
     editorDirectory: vi.fn(),
     editorFile: vi.fn(),
+    editorPreview: vi.fn(),
     editorDirty: vi.fn(),
     saveEditorFile: vi.fn(),
   },
@@ -48,6 +49,7 @@ beforeEach(() => {
     truncated: false,
   });
   vi.mocked(Git.editorFile).mockResolvedValue(file);
+  vi.mocked(Git.editorPreview).mockRejectedValue(new Error('not previewable'));
   vi.mocked(Git.editorDirty).mockResolvedValue(undefined);
   vi.mocked(Git.saveEditorFile).mockImplementation(async (_root, path, _revision, content) => ({
     path,
@@ -59,6 +61,24 @@ afterEach(() => {
   cleanup();
   localStorage.clear();
   vi.resetAllMocks();
+});
+it('falls back to binary preview without creating a writable or dirty buffer', async () => {
+  vi.mocked(Git.editorFile).mockRejectedValue(new Error('binary file'));
+  vi.mocked(Git.editorPreview).mockResolvedValue({
+    path: file.path,
+    offset: 0,
+    size: 5,
+    data: btoa('\x00\xffABC'),
+    mime: '',
+    image: false,
+    more: false,
+  });
+  await setup();
+  expect(screen.getByLabelText('二进制只读预览')).toBeTruthy();
+  expect(screen.queryByLabelText('编辑代码 test.ts')).toBeNull();
+  expect(screen.queryByLabelText('未保存')).toBeNull();
+  expect((screen.getByRole('button', { name: /^保存$/ }) as HTMLButtonElement).disabled).toBe(true);
+  expect(Git.saveEditorFile).not.toHaveBeenCalled();
 });
 async function setup() {
   let result!: ReturnType<typeof render>;

@@ -30,6 +30,7 @@ git -C "$repo" stash push -m 'A task saved for later' >/dev/null
 printf 'export const color = "mist-blue";\n' > "$repo/code.ts"
 awk 'BEGIN { for(i=1;i<=60;i++) { if(i==2) print "first edited block"; else if(i==55) print "second edited block"; else print "line " i } }' > "$repo/tracked.txt"
 printf 'Untracked preview\n' > "$repo/preview.txt"
+printf '\000\377ABC' > "$repo/bytes.bin"
 git -C "$fixture/remote.git" init --bare >/dev/null 2>&1
 git -C "$repo" remote add origin "$fixture/remote.git"
 git -C "$repo" push -u origin main >/dev/null 2>&1

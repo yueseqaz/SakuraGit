@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -203,6 +204,9 @@ func (d *desktopWorkbench) terminalView(c *ui.Context) {
 			ui.Text(c, "终端").FontSize(12)
 			for i, s := range sessions {
 				label := fmtTerminalTab(i, s == active, terminalRunning(s.term.Done()))
+				if s.label != "" {
+					label = strings.Replace(label, "Shell "+string(rune('1'+i)), s.label, 1)
+				}
 				if ui.Button(c, label).Clicked() {
 					g.terminals.mu.Lock()
 					g.terminals.active[d.root] = s.id

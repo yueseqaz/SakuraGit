@@ -1,0 +1,211 @@
+.modal.developer-dialog {
+  width: min(820px, calc(100vw - 40px));
+}
+.developer-root {
+  display: block;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  font-size: 11px;
+  margin-bottom: 16px;
+}
+.developer-tabs,
+.developer-heading,
+.developer-command-actions,
+.binary-pagination {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.developer-tabs {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 16px;
+}
+.developer-heading {
+  justify-content: space-between;
+  margin: 18px 0 12px;
+  font-size: 13px;
+}
+.developer-heading small {
+  color: var(--muted);
+  font: 10px var(--mono);
+  margin-left: 8px;
+}
+.developer-command {
+  display: flex;
+  gap: 12px;
+  padding: 13px;
+  margin-bottom: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--canvas);
+}
+.developer-command > div:first-child {
+  min-width: 0;
+  flex: 1;
+}
+.developer-command strong {
+  font-size: 13px;
+}
+.developer-command small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 4px;
+}
+.developer-command pre,
+.developer-confirm pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: 11px/1.7 var(--mono);
+  margin: 10px 0 0;
+  color: var(--ink);
+}
+.developer-presets {
+  background: var(--canvas);
+  padding: 16px;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+}
+.developer-presets p {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+.developer-presets button {
+  margin: 0 8px 8px 0;
+}
+.developer-form {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  margin-top: 16px;
+}
+.developer-form label {
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ink-secondary);
+}
+.developer-form input,
+.developer-form textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--ink);
+  background: var(--canvas);
+  font: 12px/1.6 var(--mono);
+}
+.developer-form .theme-note {
+  margin: 0;
+}
+.developer-confirm {
+  background: var(--green-soft);
+  border: 1px solid var(--green);
+  padding: 16px;
+  margin-top: 16px;
+  border-radius: 6px;
+}
+.developer-confirm p,
+.developer-warning {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.developer-status {
+  font-size: 12px;
+  color: var(--green);
+}
+.developer-tools {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 16px 0;
+}
+.developer-tools article {
+  background: var(--canvas);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+}
+.developer-tools strong {
+  font: 13px var(--mono);
+  color: var(--green);
+}
+.developer-tools span {
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.developer-tools code {
+  font-size: 10px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.developer-panel details {
+  font-size: 12px;
+  color: var(--ink-secondary);
+}
+.developer-variable {
+  display: grid;
+  gap: 6px;
+  font-size: 11px;
+}
+.developer-variable code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+}
+.binary-viewer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.binary-viewer > header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  font: 10px var(--mono);
+  color: var(--muted);
+}
+.binary-viewer > pre {
+  flex: 1;
+  overflow: auto;
+  margin: 0;
+  padding: 16px;
+  color: var(--ink);
+  background: var(--canvas);
+  font: 11px/1.8 var(--mono);
+}
+.binary-image {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 24px;
+  background: repeating-conic-gradient(var(--line) 0% 25%, var(--canvas) 0% 50%) 0 0 / 20px 20px;
+}
+.binary-image img {
+  display: block;
+  margin: auto;
+  max-width: 100%;
+  height: auto;
+}
+@media (max-width: 700px) {
+  .developer-tools {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .developer-command {
+    flex-wrap: wrap;
+  }
+}

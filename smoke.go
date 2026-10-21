@@ -97,6 +97,17 @@ func startSmoke(service *Git, win *mygo.Window, page *mygo.Page, ok *atomic.Bool
 							break
 						}
 						fmt.Println("SAKURAGIT_SMOKE_EDITOR: native CodeMirror load, syntax, edit and revision-checked workspace save passed")
+						_, _ = page.Eval(`(()=>{const input=document.querySelector('[aria-label="仓库相对文件路径"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'bytes.bin');input.dispatchEvent(new Event('input',{bubbles:true}));})()`)
+						phase = 45
+					case phase == 45:
+						_, _ = page.Eval(`document.querySelector('.editor-path-bar').requestSubmit()`)
+						phase = 46
+					case phase == 46:
+						preview, _ := page.Eval(`(()=>{const viewer=document.querySelector('.editor-document:not([hidden]) .binary-viewer');const save=[...document.querySelectorAll('.editor-toolbar button')].find(b=>b.textContent==='保存');return !!viewer&&viewer.textContent.includes('00 ff 41 42 43')&&save?.disabled===true})()`)
+						if preview != true {
+							break
+						}
+						fmt.Println("SAKURAGIT_SMOKE_BINARY: real IPC binary page and disabled text save passed")
 						_, _ = page.Eval(`document.querySelector('[aria-label="提交历史"]').click()`)
 						phase = 1
 					case phase == 1 && (state["historyReady"] == true || state["historyEmpty"] == true):

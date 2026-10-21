@@ -1,13 +1,16 @@
+import type { BinaryPreview } from './mygo';
+
 export type EditorDocument = {
   root: string;
   path: string;
   original: string;
   content: string;
   revision: string;
+  preview?: BinaryPreview;
 };
 export const documentID = (root: string, path: string) => JSON.stringify([root, path]);
 const key = ['gitlane', 'editor-drafts', 'v1'].join('.');
-export const dirtyDocument = (d: EditorDocument) => d.original !== d.content;
+export const dirtyDocument = (d: EditorDocument) => !d.preview && d.original !== d.content;
 export function readEditorDrafts(): EditorDocument[] {
   try {
     const raw = localStorage.getItem(key) || '[]';
@@ -18,6 +21,7 @@ export function readEditorDrafts(): EditorDocument[] {
     return docs.filter((d): d is EditorDocument => {
       if (
         !d ||
+        d.preview !== undefined ||
         typeof d.root !== 'string' ||
         !/^(\/|[A-Za-z]:[\\/])/.test(d.root) ||
         typeof d.path !== 'string' ||

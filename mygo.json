@@ -1,7 +1,7 @@
 {
   "name": "SakuraGit",
   "identifier": "dev.gitlane.desktop",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "devUrl": "http://127.0.0.1:5274",
   "devCommand": "npm run dev:web",
   "buildCommand": "npm run build:web",
@@ -13,8 +13,14 @@
   },
   "linux": {
     "command": "sakuragit",
-    "categories": ["Development", "RevisionControl"],
+    "categories": [
+      "Development",
+      "RevisionControl"
+    ],
     "comment": "A lightweight visual Git desktop client",
-    "depends": ["git", "fonts-noto-cjk"]
+    "depends": [
+      "git",
+      "fonts-noto-cjk"
+    ]
   }
 }

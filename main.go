@@ -11,6 +11,7 @@ import (
 	"sync/atomic"
 
 	"github.com/egoist/mygo"
+	"github.com/yueseqaz/SakuraGit/internal/devtools"
 	"github.com/yueseqaz/SakuraGit/internal/gitrepo"
 )
 
@@ -27,7 +28,8 @@ type Startup struct {
 	ExplicitPath bool             `json:"explicitPath"`
 }
 
-// Git exposes only repository-scoped operations, never arbitrary shell commands.
+// Git keeps Git operations repository-scoped; user-authored developer commands
+// run only on explicit request in a separate, visible terminal session.
 type Git struct {
 	engine             gitrepo.Engine
 	mu                 sync.Mutex
@@ -47,6 +49,9 @@ type Git struct {
 	editorRevision     atomic.Int64
 	editorPrompt       atomic.Bool
 	editorExitApproved atomic.Bool
+	developerMu        sync.Mutex
+	environmentMu      sync.Mutex
+	environment        *devtools.Environment
 }
 
 func (g *Git) Bootstrap() (Startup, error) {
@@ -192,7 +197,7 @@ func main() {
 		log.Fatal("--smoke requires --repo")
 	}
 	mygo.App.SetName("SakuraGit")
-	mygo.App.SetVersion("0.7.0")
+	mygo.App.SetVersion("0.8.0")
 	// Keep the pre-rename data location so existing sessions and drafts survive.
 	if dir, err := mygo.App.Path(mygo.PathAppData); err == nil {
 		mygo.App.SetPath(mygo.PathUserData, filepath.Join(dir, "Gitlane"))
