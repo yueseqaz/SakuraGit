@@ -81,6 +81,23 @@ export interface Diff {
   hunks: Hunk[];
 }
 
+export interface EditorDirectory {
+  entries: EditorEntry[];
+  truncated: boolean;
+}
+
+export interface EditorEntry {
+  name: string;
+  path: string;
+  directory: boolean;
+}
+
+export interface EditorFile {
+  path: string;
+  content: string;
+  revision: string;
+}
+
 export interface File {
   path: string;
   oldPath: string;
@@ -280,6 +297,15 @@ export const Git = {
   dropStash(root: string, hash: string, ref: string): Promise<Result> {
     return call("Git.DropStash", root, hash, ref);
   },
+  editorDirectory(root: string, path: string): Promise<EditorDirectory> {
+    return call("Git.EditorDirectory", root, path);
+  },
+  editorDirty(count: number): Promise<void> {
+    return call("Git.EditorDirty", count);
+  },
+  editorFile(root: string, path: string): Promise<EditorFile> {
+    return call("Git.EditorFile", root, path);
+  },
   fileBackups(root: string): Promise<FileBackup[]> {
     return call("Git.FileBackups", root);
   },
@@ -327,6 +353,9 @@ export const Git = {
   },
   saveConflict(root: string, path: string, revision: string, result: string): Promise<Result> {
     return call("Git.SaveConflict", root, path, revision, result);
+  },
+  saveEditorFile(root: string, path: string, revision: string, content: string): Promise<EditorFile> {
+    return call("Git.SaveEditorFile", root, path, revision, content);
   },
   savePreferences(p: Preferences): Promise<void> {
     return call("Git.SavePreferences", p);

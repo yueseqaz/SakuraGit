@@ -28,7 +28,9 @@ vi.mock('./EditorSurface', () => ({
     <textarea
       aria-label={`编辑代码 ${path}`}
       defaultValue={content}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e) =>
+        onChange(e.target.value.replace(/\r?\n/g, content.includes('\r\n') ? '\r\n' : '\n'))
+      }
       onKeyDown={(e) => {
         if (e.ctrlKey && e.key === 's') onSave();
       }}

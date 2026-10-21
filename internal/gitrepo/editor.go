@@ -37,7 +37,7 @@ func editorPath(fs *os.Root, path string, directory bool) (os.FileInfo, error) {
 	parts := strings.Split(path, "/")
 	var info os.FileInfo
 	for i, part := range parts {
-		if part == "." || part == ".." || strings.EqualFold(part, ".git") {
+		if part == "." || part == ".." || strings.EqualFold(strings.TrimRight(part, " ."), ".git") || strings.TrimRight(part, " .") != part {
 			return nil, errors.New("编辑器不能访问 Git 元数据或仓库外路径")
 		}
 		prefix := strings.Join(parts[:i+1], "/")

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { isMyGo } from 'mygo-runtime';
 import { ChevronRight, FileCode2, Folder, RefreshCw, Save, X } from 'lucide-react';
 import { Git, type EditorDirectory, type EditorFile, type Snapshot } from './mygo';
@@ -54,7 +54,7 @@ function FileTree({
       alive.current = false;
     };
   }, [root]);
-  const rows = (path: string, depth: number): React.ReactNode => (
+  const rows = (path: string, depth: number): ReactNode => (
     <>
       {directories[path]?.entries.map((entry) => (
         <div key={entry.path}>
@@ -144,20 +144,27 @@ export function EditorWorkbench({
   const [cursor, setCursor] = useState({ line: 1, column: 1 });
   const [confirm, setConfirm] = useState<{ id: string; action: 'close' | 'reload' } | null>(null);
   const [working, setWorking] = useState(false);
+  const [searchRequest, setSearchRequest] = useState<{ id: string; sequence: number } | null>(null);
   const pending = useRef(new Set<string>());
   const rootRef = useRef(snapshot.root);
   rootRef.current = snapshot.root;
   const dirtyQueue = useRef(Promise.resolve());
+  const lastDirty = useRef(-1);
   const synchronize = (next: EditorDocument[]) => {
     if (!native) return;
     setCacheError(
       cacheEditorDrafts(next) ? '' : '草稿缓存失败，请勿关闭窗口；先保存文件或复制内容。',
     );
     const count = next.filter(dirtyDocument).length;
+    if (count === lastDirty.current) return;
+    lastDirty.current = count;
     dirtyQueue.current = dirtyQueue.current
       .catch(() => {})
       .then(() => Git.editorDirty(count))
-      .catch((e) => setCacheError(`退出保护同步失败：${String(e)}。请先保存，不要关闭窗口。`));
+      .catch((e) => {
+        lastDirty.current = -1;
+        setCacheError(`退出保护同步失败：${String(e)}。请先保存，不要关闭窗口。`);
+      });
   };
   const update = (next: EditorDocument[]) => {
     docs.current = next;
@@ -408,6 +415,17 @@ export function EditorWorkbench({
                 >
                   重新读取
                 </button>
+                <button
+                  className="button compact"
+                  onClick={() =>
+                    setSearchRequest({
+                      id: selectedID,
+                      sequence: (searchRequest?.sequence || 0) + 1,
+                    })
+                  }
+                >
+                  查找 / 替换
+                </button>
                 <button className="button compact" onClick={() => onDiff(selected.path)}>
                   查看 Diff
                 </button>
@@ -435,6 +453,7 @@ export function EditorWorkbench({
                 key={`${id}:${epochs[id] || 0}`}
               >
                 <EditorSurface
+                  searchRequest={searchRequest?.id === id ? searchRequest.sequence : undefined}
                   path={d.path}
                   content={d.content}
                   visible={visible && id === selectedID}

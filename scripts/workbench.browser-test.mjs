@@ -77,7 +77,7 @@ try {
         const listeners = {};
         let editorFile = {
           path: patch.path,
-          content: 'export const label = "mist-blue";\n',
+          content: 'export const label = "mist-blue";' + (appearance === 'dark' ? '\r\n' : '\n'),
           revision: 'a'.repeat(64),
         };
         globalThis.mygo = {
@@ -184,6 +184,7 @@ try {
       await page.getByRole('button', { name: 'command.ts', exact: true }).click();
       const code = page.getByRole('textbox', { name: `编辑代码 ${patch.path}` });
       await code.waitFor();
+      await page.locator('.cm-content .cm-line span').first().waitFor();
       await code.click();
       await page.keyboard.press('ControlOrMeta+End');
       await page.keyboard.insertText('// editor fixture\n');
@@ -199,7 +200,9 @@ try {
         demoSnapshot.root,
         patch.path,
         'a'.repeat(64),
-        'export const label = "mist-blue";\n// editor fixture\n',
+        ['export const label = "mist-blue";', '// editor fixture', ''].join(
+          mode === 'dark' ? '\r\n' : '\n',
+        ),
       ]);
       await page.getByRole('button', { name: '查看 Diff', exact: true }).click();
       if (palette === 'mist' && mode === 'light') {

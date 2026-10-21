@@ -1074,7 +1074,13 @@ export default function App() {
                 run={mutate}
                 onDiff={(path) => {
                   setView('changes');
-                  setSelection({ kind: 'file', path, staged: false });
+                  const file = snapshot.files.find((file) => file.path === path);
+                  setSelection(file ? { kind: 'file', path, staged: !isUnstaged(file) } : null);
+                  if (!file)
+                    setNotice({
+                      kind: 'success',
+                      text: '这个文件目前没有 Git 差异；未保存的编辑需要先保存到工作区。',
+                    });
                   setSearch('');
                 }}
               />

@@ -6,6 +6,7 @@ import { indentWithTab } from '@codemirror/commands';
 import { languages } from '@codemirror/language-data';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { tags } from '@lezer/highlight';
+import { openSearchPanel } from '@codemirror/search';
 
 const colors = HighlightStyle.define([
   { tag: [tags.keyword, tags.modifier, tags.operatorKeyword], color: 'var(--editor-keyword)' },
@@ -57,6 +58,7 @@ export function EditorSurface({
   onSave,
   onCursor,
   onLanguageError,
+  searchRequest,
 }: {
   path: string;
   content: string;
@@ -65,6 +67,7 @@ export function EditorSurface({
   onSave: () => void;
   onCursor: (line: number, column: number) => void;
   onLanguageError: () => void;
+  searchRequest?: number;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const editor = useRef<EditorView | null>(null);
@@ -136,7 +139,16 @@ export function EditorSurface({
     if (visible) {
       editor.current?.requestMeasure();
       editor.current?.focus();
+      const state = editor.current?.state;
+      if (state) {
+        const pos = state.selection.main.head,
+          line = state.doc.lineAt(pos);
+        callbacks.current.onCursor(line.number, pos - line.from + 1);
+      }
     }
   }, [visible]);
+  useEffect(() => {
+    if (searchRequest && editor.current) openSearchPanel(editor.current);
+  }, [searchRequest]);
   return <div className="editor-surface" ref={host} />;
 }
