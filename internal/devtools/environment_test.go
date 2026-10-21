@@ -92,3 +92,14 @@ func TestCommandDoesNotInterpolateUserScript(t *testing.T) {
 		t.Fatal(args)
 	}
 }
+
+func TestVersionProbesDisableAutomaticToolDownloads(t *testing.T) {
+	variables := []Variable{{Name: "GOTOOLCHAIN", Value: "auto"}, {Name: "COREPACK_ENABLE_NETWORK", Value: "1"}}
+	values := ParseEnvironment([]byte(strings.Join(versionEnvironment(variables), "\x00")))
+	if values["GOTOOLCHAIN"] != "local" || values["COREPACK_ENABLE_NETWORK"] != "0" || values["COREPACK_ENABLE_AUTO_PIN"] != "0" || values["GOWORK"] != "off" {
+		t.Fatal("version probe permits tool downloads")
+	}
+	if variables[0].Value != "auto" || variables[1].Value != "1" {
+		t.Fatal("version probe changed actual command environment")
+	}
+}

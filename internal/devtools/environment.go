@@ -246,7 +246,7 @@ func Probe(ctx context.Context, e Environment, overrides []Variable) Environment
 				args = []string{e.Shell, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", "& '" + strings.ReplaceAll(t.Path, "'", "''") + "' --version"}
 			}
 			probeCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
-			data, err := output(probeCtx, home, Env(e.Variables), args, 4096)
+			data, err := output(probeCtx, home, versionEnvironment(e.Variables), args, 4096)
 			cancel()
 			if err != nil {
 				t.Version = "版本检测失败或超时"
@@ -257,6 +257,18 @@ func Probe(ctx context.Context, e Environment, overrides []Variable) Environment
 		e.Tools = append(e.Tools, t)
 	}
 	return e
+}
+
+func versionEnvironment(variables []Variable) []string {
+	// Corepack shims and Go toolchain selection must not download tools merely
+	// because the environment panel asks for a version. Real commands are unchanged.
+	return Env(Merge(variables, []Variable{
+		{Name: "COREPACK_ENABLE_NETWORK", Value: "0"},
+		{Name: "COREPACK_ENABLE_DOWNLOAD_PROMPT", Value: "0"},
+		{Name: "COREPACK_ENABLE_AUTO_PIN", Value: "0"},
+		{Name: "GOTOOLCHAIN", Value: "local"},
+		{Name: "GOWORK", Value: "off"},
+	}))
 }
 
 func Command(shell, script string) []string {
