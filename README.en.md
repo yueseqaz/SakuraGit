@@ -8,7 +8,7 @@
 
 SakuraGit is a lightweight Git desktop client built with **MyGo, Go, React, and TypeScript**. It renders through the operating system's WebView and works with your installed Git, **without bundling Chromium**. Mist-blue themes, resizable panels, and a focused Diff reader make everyday commits, code review, and branch operations easier to follow.
 
-> Current version: **0.6.0, early development**. Built and tested on macOS Apple Silicon, with explicit limitations; not a claim of production readiness or cross-platform verification. The application UI is currently primarily Chinese; this English README does not imply an English UI is available.
+> Current version: **0.7.0, early development**. Built and tested on macOS Apple Silicon, with explicit limitations; not a claim of production readiness or cross-platform verification. The application UI is currently primarily Chinese; this English README does not imply an English UI is available.
 
 ![SakuraGit workspace](docs/screenshots/workspace.png)
 
@@ -46,6 +46,16 @@ Download successfully published versions from [GitHub Releases](https://github.c
 | Linux | Separate x64 / ARM64 `.deb` and `.tar.gz` packages |
 
 All packages require system Git. Windows needs WebView2 Runtime. Linux needs a graphical desktop, GTK 3, and WebKitGTK 4.1; Debian packages declare the dependencies. macOS builds are ad-hoc signed but not notarized; Windows installers are not Authenticode signed. Security warnings may appear. **A successful build is not comprehensive device or GUI validation.** Windows / Linux ARM64 binaries are cross-compiled on same-OS x64 runners. Use the attached `SHA256SUMS` to check downloads.
+
+## Code Editor
+
+Open **代码编辑器** in the sidebar, select a file from the lazy directory browser, or enter a repository-relative path. **编辑工作文件** above a working-file Diff opens the current worktree file, not a staged or historical snapshot. Up to 16 tabs across repositories retain separate editor undo/selection/scroll state.
+
+- CodeMirror 6 provides line numbers, syntax highlighting, folding, bracket matching, indentation, search/replace and language-dependent basic completion. No language server, project-wide type analysis, debugger or AI completion is included.
+- `Cmd/Ctrl+S` saves. Search/replace uses CodeMirror's platform-specific default shortcuts. Existing themes and font size apply to the editor.
+- Saving changes only the worktree, never stages or commits. Revision checks reject external content/permission changes; dirty tab close and reload require confirmation. Switching pages/repositories retains buffers.
+- Unsaved drafts are best-effort local WebView storage, with explicit cache-failure warnings and native exit confirmation. This is not a backup guarantee or multi-process editing support. Pre-save file backups live in per-worktree Git metadata under `sakuragit-backups` and are available through Recovery. Drafts/backups may contain sensitive text; they remain local and are not automatically deleted or uploaded.
+- Existing regular UTF-8 files only, up to 1 MB. LF/CRLF, BOM, final newline and executable permissions are preserved. Mixed/legacy line endings, symlinks, Git metadata, nested repositories and binaries are refused. Creation/deletion/rename are not yet provided. Directory browsing includes ignored/untracked files, lazily reads at most 2,000 entries per directory and reports truncation; relative-path opening remains available.
 
 ## Built-in Terminal
 
@@ -113,7 +123,7 @@ On macOS ARM64, the outputs are:
 
 ```text
 build/darwin-arm64/SakuraGit.app
-build/darwin-arm64/SakuraGit 0.6.0 arm64.dmg
+build/darwin-arm64/SakuraGit 0.7.0 arm64.dmg
 ```
 
 ```sh
@@ -175,8 +185,8 @@ The script checks automatic scroll loading across 426 commits, the oldest commit
 To publish a new version, update its version metadata and release notes, wait for `main` CI to pass, then run:
 
 ```sh
-git tag v0.6.0  # Example: replace with the new version number
-git push origin v0.6.0
+git tag v0.7.0  # Example: replace with the new version number
+git push origin v0.7.0
 ```
 
 See the [CI](.github/workflows/ci.yml), [cross-platform build](.github/workflows/build.yml), and [Release](.github/workflows/release.yml) workflows. In-app auto-updates, Apple notarization, and Windows signing certificates are not configured.

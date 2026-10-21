@@ -70,9 +70,11 @@ import { Workbench } from './workbench-api';
 import { ConflictPanel } from './ConflictPanel';
 import { RecoveryPanel } from './RecoveryPanel';
 import { HistoryActions } from './HistoryActions';
+import { EditorWorkbench } from './EditorWorkbench';
 
 const native = isMyGo();
-type View = 'changes' | 'history' | 'worktrees' | 'stashes' | 'remotes' | 'workflow' | 'recovery';
+type View =
+  'changes' | 'history' | 'worktrees' | 'stashes' | 'remotes' | 'workflow' | 'recovery' | 'editor';
 type Modal =
   | { kind: 'open' }
   | { kind: 'branch' }
@@ -89,6 +91,7 @@ const viewNames: Record<View, string> = {
   remotes: '仓库连接',
   workflow: '开发工具',
   recovery: '撤销与恢复',
+  editor: '代码编辑器',
 };
 const messageOf = (error: unknown) => describeGitError(error).raw;
 const basename = (path: string) => path.split('/').at(-1) || path;
@@ -123,6 +126,15 @@ export default function App() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(native ? null : demoSnapshot);
   const [recents, setRecents] = useState<Recent[]>([]);
   const [view, setView] = useState<View>('changes');
+  const [editorStarted, setEditorStarted] = useState(false);
+  const [editorRequest, setEditorRequest] = useState<{
+    root: string;
+    path: string;
+    sequence: number;
+  } | null>(null);
+  useEffect(() => {
+    if (view === 'editor') setEditorStarted(true);
+  }, [view]);
   const [selection, setSelection] = useState<Selection>(
     native ? null : { kind: 'file', path: demoSnapshot.files[0].path, staged: false },
   );
@@ -766,6 +778,12 @@ export default function App() {
         </div>
         <nav aria-label="主导航" className="main-nav">
           <NavButton
+            active={view === 'editor'}
+            onClick={() => changeView('editor')}
+            icon={<FileCode2 />}
+            label="代码编辑器"
+          />
+          <NavButton
             active={view === 'changes'}
             onClick={() => changeView('changes')}
             icon={<Layers2 />}
@@ -879,7 +897,7 @@ export default function App() {
           <div className="sidebar-version">
             <span>SakuraGit</span>
             <span>
-              v0.6.0 <span className="tiny-dot" /> MyGo
+              v0.7.0 <span className="tiny-dot" /> MyGo
             </span>
           </div>
         </div>
@@ -1047,6 +1065,20 @@ export default function App() {
                 </button>
               </div>
             )}
+            {(editorStarted || view === 'editor') && (
+              <EditorWorkbench
+                snapshot={snapshot}
+                visible={view === 'editor'}
+                requested={editorRequest}
+                busy={!!busy}
+                run={mutate}
+                onDiff={(path) => {
+                  setView('changes');
+                  setSelection({ kind: 'file', path, staged: false });
+                  setSearch('');
+                }}
+              />
+            )}
             {view === 'changes' && (
               <ResizableSplit
                 className="workbench"
@@ -1175,6 +1207,18 @@ export default function App() {
                   />
                 ) : (
                   <DiffPanel
+                    onEdit={
+                      selection?.kind === 'file'
+                        ? () => {
+                            setEditorRequest({
+                              root: snapshot.root,
+                              path: selection.path,
+                              sequence: Date.now(),
+                            });
+                            changeView('editor');
+                          }
+                        : undefined
+                    }
                     codeSize={preferences.codeSize}
                     onCodeSize={(codeSize) => void savePreferences({ ...preferences, codeSize })}
                     diff={diff}

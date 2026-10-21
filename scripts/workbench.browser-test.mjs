@@ -75,6 +75,11 @@ try {
         window.__SAKURAGIT_EMBEDDED__ = true;
         window.__fixtureCalls = [];
         const listeners = {};
+        let editorFile = {
+          path: patch.path,
+          content: 'export const label = "mist-blue";\n',
+          revision: 'a'.repeat(64),
+        };
         globalThis.mygo = {
           on(name, callback) {
             (listeners[name] ||= []).push(callback);
@@ -85,6 +90,11 @@ try {
           async call(method, ...args) {
             window.__fixtureCalls.push({ method, args });
             const data = {
+              'Git.EditorDirectory': {
+                entries: [{ name: 'command.ts', path: patch.path, directory: false }],
+                truncated: false,
+              },
+              'Git.EditorFile': editorFile,
               'Git.Bootstrap': {
                 path: snapshot.root,
                 recents: [{ name: snapshot.name, path: snapshot.root }],
@@ -130,7 +140,12 @@ try {
             };
             if (method === 'Git.SaveConflict' || method === 'Git.StageLines')
               return { output: 'fixture only' };
+            if (method === 'Git.SaveEditorFile') {
+              editorFile = { path: args[1], content: args[3], revision: 'b'.repeat(64) };
+              return editorFile;
+            }
             if (
+              method === 'Git.EditorDirty' ||
               method === 'Git.WorkbenchModal' ||
               method === 'Git.SavePreferences' ||
               method === 'Git.SaveSession' ||
@@ -165,6 +180,28 @@ try {
         false,
         `${palette}/${mode} overflows`,
       );
+      await page.getByRole('button', { name: '代码编辑器', exact: true }).click();
+      await page.getByRole('button', { name: 'command.ts', exact: true }).click();
+      const code = page.getByRole('textbox', { name: `编辑代码 ${patch.path}` });
+      await code.waitFor();
+      await code.click();
+      await page.keyboard.press('ControlOrMeta+End');
+      await page.keyboard.insertText('// editor fixture\n');
+      await page.screenshot({ path: `${output}/${palette}-${mode}-editor.png` });
+      await page.getByRole('button', { name: '保存', exact: true }).click();
+      await page.waitForFunction(() =>
+        window.__fixtureCalls.some((c) => c.method === 'Git.SaveEditorFile'),
+      );
+      const saved = await page.evaluate(() =>
+        window.__fixtureCalls.find((c) => c.method === 'Git.SaveEditorFile'),
+      );
+      assert.deepEqual(saved.args, [
+        demoSnapshot.root,
+        patch.path,
+        'a'.repeat(64),
+        'export const label = "mist-blue";\n// editor fixture\n',
+      ]);
+      await page.getByRole('button', { name: '查看 Diff', exact: true }).click();
       if (palette === 'mist' && mode === 'light') {
         await page.getByLabel('选择新第 2 行新增').check();
         await page.getByRole('button', { name: '暂存所选行', exact: true }).click();
@@ -223,7 +260,7 @@ try {
     await page.close();
   }
   console.log(
-    'Workbench UI fixture contracts and 14 visual snapshots passed. Native PTYs are tested separately.',
+    'Workbench UI fixture contracts and 22 visual snapshots passed. Native PTYs are tested separately.',
   );
 } finally {
   await browser?.close();

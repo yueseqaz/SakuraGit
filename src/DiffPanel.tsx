@@ -59,6 +59,7 @@ export function DiffPanel({
   disabled,
   codeSize,
   onCodeSize,
+  onEdit,
 }: {
   diff: Diff | null;
   loading: boolean;
@@ -72,6 +73,7 @@ export function DiffPanel({
   disabled: boolean;
   codeSize: number;
   onCodeSize: (size: number) => void;
+  onEdit?: () => void;
 }) {
   const [options, setOptions] = useState(initialOptions);
   const [focused, setFocused] = useState(false);
@@ -246,6 +248,11 @@ export function DiffPanel({
       }}
     >
       <div className="diff-reader-heading">
+        {onEdit && (
+          <button className="button compact" disabled={disabled} onClick={onEdit}>
+            编辑工作文件
+          </button>
+        )}
         <FileCode2 size={17} />
         <div className="diff-file-identity">
           <strong id={titleId}>{title}</strong>

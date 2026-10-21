@@ -29,20 +29,24 @@ type Startup struct {
 
 // Git exposes only repository-scoped operations, never arbitrary shell commands.
 type Git struct {
-	engine       gitrepo.Engine
-	mu           sync.Mutex
-	recents      []Recent
-	settings     string
-	startupPath  string
-	ephemeral    bool
-	sessionMu    sync.Mutex
-	sessionFile  string
-	operationMu  sync.Mutex
-	operation    *operationJob
-	exitPrompt   bool
-	exitApproved bool
-	terminals    repositoryTerminals
-	desktop      *desktopWorkbench
+	engine             gitrepo.Engine
+	mu                 sync.Mutex
+	recents            []Recent
+	settings           string
+	startupPath        string
+	ephemeral          bool
+	sessionMu          sync.Mutex
+	sessionFile        string
+	operationMu        sync.Mutex
+	operation          *operationJob
+	exitPrompt         bool
+	exitApproved       bool
+	terminals          repositoryTerminals
+	desktop            *desktopWorkbench
+	editorDirty        atomic.Int64
+	editorRevision     atomic.Int64
+	editorPrompt       atomic.Bool
+	editorExitApproved atomic.Bool
 }
 
 func (g *Git) Bootstrap() (Startup, error) {
@@ -188,7 +192,7 @@ func main() {
 		log.Fatal("--smoke requires --repo")
 	}
 	mygo.App.SetName("SakuraGit")
-	mygo.App.SetVersion("0.6.0")
+	mygo.App.SetVersion("0.7.0")
 	// Keep the pre-rename data location so existing sessions and drafts survive.
 	if dir, err := mygo.App.Path(mygo.PathAppData); err == nil {
 		mygo.App.SetPath(mygo.PathUserData, filepath.Join(dir, "Gitlane"))
@@ -199,7 +203,7 @@ func main() {
 	mygo.Bind(service)
 	if !*smoke {
 		mygo.App.OnBeforeQuit(func(e *mygo.QuitEvent) {
-			if service.protectExit(mygo.FocusedWindow(), true) || service.protectTerminals(mygo.FocusedWindow(), true) {
+			if service.protectExit(mygo.FocusedWindow(), true) || service.protectEditor(mygo.FocusedWindow(), true) || service.protectTerminals(mygo.FocusedWindow(), true) {
 				e.PreventDefault()
 			}
 		})
@@ -223,7 +227,7 @@ func main() {
 		win := newDesktopWorkbench(service, background, stateKey, prefs)
 		if !*smoke {
 			win.OnClose(func(e *mygo.CloseEvent) {
-				if service.protectExit(win, false) || service.protectTerminals(win, false) {
+				if service.protectExit(win, false) || service.protectEditor(win, false) || service.protectTerminals(win, false) {
 					e.PreventDefault()
 				}
 			})

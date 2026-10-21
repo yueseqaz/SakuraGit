@@ -7,6 +7,7 @@ import './style.css';
 import './reader.css';
 import './layout.css';
 import './workbench.css';
+import './editor.css';
 import { installTextContextMenu } from './desktop-interactions';
 import { installNativeOverlaySync } from './native-overlays';
 

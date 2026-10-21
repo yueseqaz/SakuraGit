@@ -8,7 +8,7 @@
 
 SakuraGit 是一个使用 **MyGo + Go + React + TypeScript** 构建的轻量 Git 桌面客户端。它用系统 WebView 渲染界面，通过系统 Git 操作本地仓库，**不捆绑 Chromium**。雾霾蓝主题、可拖动面板和专注 Diff 阅读，让日常提交、代码审阅和分支操作更直观。
 
-> 当前版本：**0.6.0，早期开发阶段**。已在 macOS Apple Silicon 上构建和测试，仍有明确的功能边界；不代表已完成生产环境或跨平台验证。目前界面以中文为主，英文文档不代表已实现英文界面。
+> 当前版本：**0.7.0，早期开发阶段**。已在 macOS Apple Silicon 上构建和测试，仍有明确的功能边界；不代表已完成生产环境或跨平台验证。目前界面以中文为主，英文文档不代表已实现英文界面。
 
 ![SakuraGit 工作区](docs/screenshots/workspace.png)
 
@@ -46,6 +46,17 @@ SakuraGit 是一个使用 **MyGo + Go + React + TypeScript** 构建的轻量 Git
 | Linux | x64 / ARM64，分别提供 `.deb` 和 `.tar.gz` |
 
 所有包均需系统 Git。Windows 需要 WebView2 Runtime；Linux 需要图形桌面、GTK 3 和 WebKitGTK 4.1，`.deb` 会声明依赖。macOS 仅 ad-hoc 签名、未公证，Windows 未做 Authenticode 签名，系统可能显示安全警告。**跨平台构建通过不等于所有系统、架构和图形交互均已实机验证**，Windows / Linux ARM64 使用同系统 x64 runner 交叉编译。下载后可使用附件 `SHA256SUMS` 核对文件。
+
+## 代码编辑器
+
+在侧栏打开 **代码编辑器**，从文件树选择文件，或输入仓库相对路径。Diff 顶部的 **编辑工作文件** 打开的是当前工作区文件，不是历史或暂存区快照。支持最多 16 个标签（跨仓库合计），每个文件保留独立的撤销、选择和滚动状态。
+
+- CodeMirror 6：行号、语法高亮、代码折叠、括号匹配、自动缩进、查找替换和语言组件提供的基础补全；不包含语言服务器、项目级类型分析、调试器或 AI 补全。
+- `Cmd/Ctrl+S` 保存；`Cmd/Ctrl+F` 查找，替换面板与其他命令使用编辑器的 CodeMirror 默认快捷键（不同系统可能不同）。主题和字号沿用设置，底部显示行列及换行格式。
+- 保存只写工作区，**不自动暂存、不提交**。保存前检查打开时的文件版本，外部修改、删除或权限变化会拒绝覆盖；重新读取脏文件或关闭标签需要确认。
+- 未保存草稿尝试缓存到本机 WebView 存储；切换页面/仓库保留打开的缓冲区，退出时提供提醒。缓存不可用会明确提示；草稿不等于可靠备份，不支持多进程并发编辑草稿。
+- 保存前的原文件备份位于当前工作树 Git 元数据中的 `sakuragit-backups`，可在撤销与恢复页读取。备份和草稿可能含源码/敏感文本，仅保存在本机，不会自动清理或上传。
+- 仅编辑已存在的普通 UTF-8 文本，最大 1 MB。保留 LF/CRLF、BOM、最终换行与可执行权限；混合/旧式换行、符号链接、Git 元数据、嵌套仓库和二进制文件拒绝打开。暂不提供新建、删除和重命名文件。文件树按目录懒加载，每目录最多显示 2000 项，包含忽略/未跟踪文件；被截断时可用相对路径打开。
 
 ## 内置终端
 
@@ -113,7 +124,7 @@ npm run build
 
 ```text
 build/darwin-arm64/SakuraGit.app
-build/darwin-arm64/SakuraGit 0.6.0 arm64.dmg
+build/darwin-arm64/SakuraGit 0.7.0 arm64.dmg
 ```
 
 ```sh
@@ -175,8 +186,8 @@ scripts/native-smoke.sh build/darwin-arm64/SakuraGit.app/Contents/MacOS/SakuraGi
 发布新版本时，更新版本号和发布说明，先确认 `main` 的 CI 通过，再执行：
 
 ```sh
-git tag v0.6.0  # 示例：替换为对应的新版本号
-git push origin v0.6.0
+git tag v0.7.0  # 示例：替换为对应的新版本号
+git push origin v0.7.0
 ```
 
 工作流见 [CI](.github/workflows/ci.yml)、[跨平台构建](.github/workflows/build.yml) 和 [Release](.github/workflows/release.yml)。尚未配置应用内自动更新、Apple 公证或 Windows 签名证书。

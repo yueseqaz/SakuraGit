@@ -1,0 +1,231 @@
+:root {
+  --editor-keyword: #8b527d;
+  --editor-string: #407650;
+  --editor-number: #966435;
+  --editor-function: #386d99;
+}
+:root[data-theme='dark'] {
+  --editor-keyword: #d6a4cb;
+  --editor-string: #aad0a2;
+  --editor-number: #e0bc88;
+  --editor-function: #9cc9ec;
+}
+.editor-workspace {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  margin: 0 12px 10px;
+}
+.editor-workspace[hidden],
+.editor-document[hidden] {
+  display: none;
+}
+.editor-layout {
+  flex: 1;
+  border: 1px solid var(--line);
+  border-radius: 0 0 6px 6px;
+  overflow: hidden;
+  background: var(--panel);
+}
+.editor-explorer {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--canvas);
+}
+.editor-explorer .panel-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.editor-tree {
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+}
+.editor-tree-note {
+  font-size: 10px;
+  color: var(--muted);
+  padding: 8px 12px;
+  margin: 0;
+  line-height: 1.6;
+}
+.editor-tree-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 0;
+  text-align: left;
+  color: var(--ink-secondary);
+  background: transparent;
+  font-size: 12px;
+}
+.editor-tree-row:hover,
+.editor-tree-row.selected {
+  background: var(--green-soft);
+  color: var(--green);
+}
+.editor-tree-row span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.editor-tree-row svg {
+  flex-shrink: 0;
+}
+.editor-tree-row .expanded {
+  transform: rotate(90deg);
+}
+.editor-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.editor-path-bar {
+  display: flex;
+  gap: 8px;
+  padding: 7px 10px;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+}
+.editor-path-bar input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  padding: 6px;
+  background: var(--canvas);
+  color: var(--ink);
+  font: 11px var(--mono);
+}
+.editor-tabs {
+  display: flex;
+  flex-shrink: 0;
+  overflow-x: auto;
+  background: var(--canvas);
+  border-bottom: 1px solid var(--line);
+  min-height: 34px;
+}
+.editor-tab {
+  display: flex;
+  align-items: center;
+  border-right: 1px solid var(--line);
+  border-top: 2px solid transparent;
+}
+.editor-tab.active {
+  background: var(--panel);
+  border-top-color: var(--green);
+}
+.editor-tab button {
+  background: transparent;
+  color: var(--ink-secondary);
+  border: 0;
+  padding: 7px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  white-space: nowrap;
+  font: 11px var(--mono);
+}
+.editor-tab.active button {
+  color: var(--ink);
+}
+.editor-tab button:first-child {
+  padding-left: 12px;
+}
+.editor-tab button:hover {
+  color: var(--green);
+}
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.editor-toolbar code {
+  min-width: 50px;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 10px;
+}
+.editor-document {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.editor-surface {
+  height: 100%;
+  min-height: 0;
+}
+.editor-warning {
+  padding: 8px 12px;
+  color: var(--warning);
+  background: var(--canvas);
+  border-bottom: 1px solid var(--line);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.editor-status {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 6px 10px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  background: var(--canvas);
+  font: 10px var(--mono);
+  flex-shrink: 0;
+}
+.editor-empty {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  color: var(--muted);
+  text-align: center;
+  gap: 12px;
+}
+.editor-empty h2 {
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 500;
+  margin: 0;
+}
+.editor-empty p {
+  font-size: 12px;
+  max-width: 420px;
+  line-height: 1.8;
+  margin: 0;
+}
+.editor-empty span {
+  font: 10px var(--mono);
+}
+@media (max-width: 760px) {
+  .editor-workspace {
+    min-height: 620px;
+  }
+  .editor-layout {
+    display: flex;
+    flex-direction: column;
+  }
+  .editor-explorer {
+    max-height: 180px;
+  }
+  .editor-main {
+    min-height: 420px;
+    flex: 1;
+  }
+}

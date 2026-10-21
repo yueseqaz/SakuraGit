@@ -7,6 +7,7 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/plugins/terminal"
 	"path/filepath"
+	"strings"
 	"sync/atomic"
 	"time"
 )
@@ -16,7 +17,7 @@ func startSmoke(service *Git, win *mygo.Window, page *mygo.Page, ok *atomic.Bool
 	go func() {
 		phase := 0
 		cloneRoot := ""
-		for deadline := time.Now().Add(45 * time.Second); time.Now().Before(deadline); {
+		for deadline := time.Now().Add(70 * time.Second); time.Now().Before(deadline); {
 			result, err := page.Eval(`JSON.stringify({ready:document.documentElement.dataset.ready,root:document.querySelector('[data-repo-root]')?.dataset.repoRoot,files:document.querySelectorAll('[data-testid="file-row"]').length,paths:[...document.querySelectorAll('.file-select')].map(n=>n.title),diffLines:document.querySelectorAll('.diff-line').length,hunks:document.querySelectorAll('.hunk-action').length,historyReady:!!document.querySelector('.commit-summary')&&!document.querySelector('.commit-details .spin'),historyEmpty:!!document.querySelector('.history-panel .empty-state'),author:document.querySelector('.author-identity')?.textContent,historyFiles:document.querySelectorAll('.commit-file').length,settings:!!document.querySelector('#code-size'),stashReady:!!document.querySelector('.stash-list-panel')&&!document.querySelector('.stash-workbench .spin'),stashItems:document.querySelectorAll('.stash-item').length,remotesReady:!!document.querySelector('.environment-grid'),remoteItems:document.querySelectorAll('.remote-card').length,error:document.querySelector('[role="alert"]')?.textContent})`)
 			if err == nil {
 				text, _ := result.(string)
@@ -66,7 +67,37 @@ func startSmoke(service *Git, win *mygo.Window, page *mygo.Page, ok *atomic.Bool
 						}
 						fmt.Println("SAKURAGIT_SMOKE_DIFF_FOCUS", focusText)
 						fmt.Println("SAKURAGIT_SMOKE_HIGHLIGHT", syntax)
-						_, _ = page.Eval(`document.querySelector('[aria-label="关闭对话框"]').click();document.querySelector('[aria-label="提交历史"]').click()`)
+						_, _ = page.Eval(`document.querySelector('[aria-label="关闭对话框"]').click();document.querySelector('[aria-label="代码编辑器"]').click()`)
+						phase = 40
+					case phase == 40:
+						opened, _ := page.Eval(`(()=>{const input=document.querySelector('[aria-label="仓库相对文件路径"]');if(!input)return false;Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'code.ts');input.dispatchEvent(new Event('input',{bubbles:true}));return true})()`)
+						if opened == true {
+							phase = 41
+						}
+					case phase == 41:
+						_, _ = page.Eval(`document.querySelector('.editor-path-bar').requestSubmit()`)
+						phase = 42
+					case phase == 42:
+						typed, _ := page.Eval(`(()=>{const input=document.querySelector('.cm-content');if(!input||!input.textContent.includes('mist-blue')||!input.querySelector('span'))return false;input.focus();const selection=getSelection();selection.selectAllChildren(input);selection.collapseToEnd();return document.execCommand('insertText',false,'// native editor fixture')})()`)
+						if typed == true {
+							phase = 43
+						}
+					case phase == 43:
+						saved, _ := page.Eval(`(()=>{if(!document.querySelector('.editor-tab [aria-label="未保存"]'))return false;const save=[...document.querySelectorAll('.editor-toolbar button')].find(b=>b.textContent==='保存');if(!save||save.disabled)return false;save.click();return true})()`)
+						if saved == true {
+							phase = 44
+						}
+					case phase == 44:
+						clean, _ := page.Eval(`!!document.querySelector('.cm-content')&&!document.querySelector('.editor-tab [aria-label="未保存"]')`)
+						if clean != true {
+							break
+						}
+						edited, readErr := service.engine.EditorFile(context.Background(), state["root"].(string), "code.ts")
+						if readErr != nil || !strings.Contains(edited.Content, "// native editor fixture") {
+							break
+						}
+						fmt.Println("SAKURAGIT_SMOKE_EDITOR: native CodeMirror load, syntax, edit and revision-checked workspace save passed")
+						_, _ = page.Eval(`document.querySelector('[aria-label="提交历史"]').click()`)
 						phase = 1
 					case phase == 1 && (state["historyReady"] == true || state["historyEmpty"] == true):
 						fmt.Println("SAKURAGIT_SMOKE_HISTORY", text)

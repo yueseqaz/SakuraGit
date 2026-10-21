@@ -278,6 +278,7 @@ func (g *Git) protectTerminals(win *mygo.Window, quit bool) bool {
 			g.terminals.closing = false
 			g.terminals.mu.Unlock()
 			if !completed {
+				g.editorExitApproved.Store(false)
 				g.operationMu.Lock()
 				g.exitApproved = false
 				g.operationMu.Unlock()

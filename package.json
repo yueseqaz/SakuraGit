@@ -1,7 +1,7 @@
 {
   "name": "sakuragit",
   "private": true,
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "A lightweight Git desktop client built with MyGo, Go, React, and TypeScript.",
   "repository": {
     "type": "git",
@@ -18,8 +18,17 @@
     "test:web": "vitest run"
   },
   "dependencies": {
+    "@codemirror/autocomplete": "^6.20.4",
+    "@codemirror/commands": "^6.11.1",
+    "@codemirror/language": "^6.13.1",
+    "@codemirror/language-data": "^6.5.2",
+    "@codemirror/search": "^6.7.2",
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/view": "^6.43.15",
     "@fontsource-variable/dm-sans": "^5.3.0",
     "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@lezer/highlight": "^1.2.5",
+    "codemirror": "^6.0.2",
     "diff": "^9.0.0",
     "lucide-react": "^0.468.0",
     "mygo-runtime": "0.5.5",
