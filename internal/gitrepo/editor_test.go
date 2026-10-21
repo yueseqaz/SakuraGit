@@ -54,7 +54,7 @@ func TestEditorUntrackedFileAndExecutableMode(t *testing.T) {
 	e, root := fixture(t, true)
 	ctx := context.Background()
 	write(t, root, "new.sh", "#!/bin/sh\n")
-	if err := os.Chmod(filepath.Join(root, "new.sh"), 0755); err != nil {
+	if err := os.Chmod(filepath.Join(root, "new.sh"), 0775); err != nil {
 		t.Fatal(err)
 	}
 	before, _ := os.Stat(filepath.Join(root, "new.sh"))

@@ -30,6 +30,15 @@ func replaceWorkFile(fs *os.Root, path string, before, after []byte, mode os.Fil
 		f.Close()
 		return err
 	}
+	// Create permissions are filtered by umask; restore the original mode.
+	if err = f.Chmod(mode); err != nil {
+		f.Close()
+		return err
+	}
+	if err = f.Sync(); err != nil {
+		f.Close()
+		return err
+	}
 	if err = f.Close(); err != nil {
 		return err
 	}

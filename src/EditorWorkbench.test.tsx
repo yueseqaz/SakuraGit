@@ -84,7 +84,7 @@ it('saves the exact revision/content, leaves staging separate and clears the dra
   fireEvent.change(screen.getByLabelText('编辑代码 test.ts'), { target: { value: 'after\r\n' } });
   expect(screen.getByLabelText('未保存')).toBeTruthy();
   await act(async () => {
-    fireEvent.click(screen.getByRole('button', { name: '保存', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: /^保存$/ }));
   });
   expect(Git.saveEditorFile).toHaveBeenCalledWith(
     demoSnapshot.root,
@@ -111,7 +111,7 @@ it('keeps dirty content after a failed save and requires confirmation before clo
   });
   fireEvent.change(screen.getByLabelText('编辑代码 test.ts'), { target: { value: 'draft' } });
   await act(async () => {
-    fireEvent.click(screen.getByRole('button', { name: '保存', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: /^保存$/ }));
   });
   expect(screen.getByLabelText('未保存')).toBeTruthy();
   fireEvent.click(screen.getByLabelText('关闭 test.ts'));
@@ -124,7 +124,7 @@ it('keeps dirty content after a failed save and requires confirmation before clo
   });
   expect(screen.queryByLabelText('编辑代码 test.ts')).toBeNull();
 });
-it('does not put a delayed save result into a different repository', async () => {
+it('keeps buffers scoped when switching repositories', async () => {
   const view = await setup();
   fireEvent.change(screen.getByLabelText('编辑代码 test.ts'), { target: { value: 'draft' } });
   await act(async () => {
@@ -154,4 +154,57 @@ it('does not put a delayed save result into a different repository', async () =>
     );
   });
   expect((screen.getByLabelText('编辑代码 test.ts') as HTMLTextAreaElement).value).toBe('draft');
+});
+
+it('keeps edits typed during an in-flight save dirty against the saved revision', async () => {
+  let finish!: (result: typeof file) => void;
+  vi.mocked(Git.saveEditorFile).mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  await setup();
+  fireEvent.change(screen.getByLabelText('编辑代码 test.ts'), { target: { value: 'first' } });
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: /^保存$/ }));
+  });
+  fireEvent.change(screen.getByLabelText('编辑代码 test.ts'), { target: { value: 'second' } });
+  await act(async () => {
+    finish({ ...file, content: 'first', revision: 'b'.repeat(64) });
+  });
+  expect((screen.getByLabelText('编辑代码 test.ts') as HTMLTextAreaElement).value).toBe('second');
+  expect(screen.getByLabelText('未保存')).toBeTruthy();
+  expect(Git.editorDirty).toHaveBeenLastCalledWith(1);
+  vi.mocked(Git.saveEditorFile).mockResolvedValue({
+    ...file,
+    content: 'second',
+    revision: 'c'.repeat(64),
+  });
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: /^保存$/ }));
+  });
+  expect(Git.saveEditorFile).toHaveBeenLastCalledWith(
+    demoSnapshot.root,
+    file.path,
+    'b'.repeat(64),
+    'second',
+  );
+});
+
+it('retains the draft if a confirmed disk reload fails', async () => {
+  await setup();
+  fireEvent.change(screen.getByLabelText('编辑代码 test.ts'), {
+    target: { value: 'important draft' },
+  });
+  fireEvent.click(screen.getByText('重新读取'));
+  vi.mocked(Git.editorFile).mockRejectedValue(new Error('file disappeared'));
+  await act(async () => {
+    fireEvent.click(screen.getByText('放弃编辑并重新读取'));
+  });
+  expect((screen.getByLabelText('编辑代码 test.ts') as HTMLTextAreaElement).value).toBe(
+    'important draft',
+  );
+  expect(screen.getByLabelText('未保存')).toBeTruthy();
+  expect(screen.getByRole('dialog')).toBeTruthy();
 });
