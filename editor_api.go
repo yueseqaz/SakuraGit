@@ -38,7 +38,7 @@ func (g *Git) protectEditor(win *mygo.Window, quit bool) bool {
 		choice, err := mygo.Dialog.Message(mygo.MessageOptions{Parent: win, Type: mygo.MessageWarning,
 			Title: "编辑器有未保存内容", Message: fmt.Sprintf("还有 %d 个文件未保存到工作区", count),
 			Detail:  "返回编辑器保存，或确认退出。草稿会尽力保存在本机缓存中，但缓存失败时退出会丢失未保存内容；不会自动保存、暂存或提交。",
-			Buttons: []string{"返回编辑器", "仍然退出"}, DefaultButton: 0, CancelButton: 0})
+			Buttons: []string{"暂不退出", "仍然退出"}, DefaultButton: 0, CancelButton: 0})
 		if err != nil || choice.Button != 1 {
 			g.exitEditorCanceled()
 			return

@@ -122,6 +122,7 @@ export function EditorWorkbench({
   busy,
   run,
   onDiff,
+  persistDrafts = true,
 }: {
   snapshot: Snapshot;
   visible: boolean;
@@ -129,10 +130,11 @@ export function EditorWorkbench({
   busy: boolean;
   run: Mutate;
   onDiff: (path: string) => void;
+  persistDrafts?: boolean;
 }) {
   const native = isMyGo();
   const [documents, setDocuments] = useState<EditorDocument[]>(() =>
-    native ? readEditorDrafts() : [],
+    native && persistDrafts ? readEditorDrafts() : [],
   );
   const docs = useRef(documents);
   const [active, setActive] = useState('');
@@ -152,9 +154,10 @@ export function EditorWorkbench({
   const lastDirty = useRef(-1);
   const synchronize = (next: EditorDocument[]) => {
     if (!native) return;
-    setCacheError(
-      cacheEditorDrafts(next) ? '' : '草稿缓存失败，请勿关闭窗口；先保存文件或复制内容。',
-    );
+    if (persistDrafts)
+      setCacheError(
+        cacheEditorDrafts(next) ? '' : '草稿缓存失败，请勿关闭窗口；先保存文件或复制内容。',
+      );
     const count = next.filter(dirtyDocument).length;
     if (count === lastDirty.current) return;
     lastDirty.current = count;
@@ -441,7 +444,7 @@ export function EditorWorkbench({
               <FileCode2 size={32} />
               <h2>在这里写代码</h2>
               <p>从左侧选择文件，或输入仓库相对路径。保存只更新工作区，不自动暂存或提交。</p>
-              <span>⌘ / Ctrl + S 保存 · F 查找 · H 替换 · Space 补全</span>
+              <span>⌘ / Ctrl + S 保存 · ⌘ / Ctrl + F 查找 · Ctrl + Space 基础补全</span>
             </div>
           )}
           {documents.map((d) => {
@@ -482,7 +485,8 @@ export function EditorWorkbench({
                 : 'CodeMirror 6 · 本地编辑'}
             </span>
             <span>
-              {documents.filter(dirtyDocument).length} 个未保存 · 保存前自动备份 · 不自动暂存
+              {documents.filter(dirtyDocument).length} 个未保存（跨仓库） · 保存前自动备份 ·
+              不自动暂存
             </span>
           </footer>
         </section>

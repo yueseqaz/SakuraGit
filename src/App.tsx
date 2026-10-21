@@ -1067,6 +1067,7 @@ export default function App() {
             )}
             {(editorStarted || view === 'editor') && (
               <EditorWorkbench
+                persistDrafts={sessionEnabled.current}
                 snapshot={snapshot}
                 visible={view === 'editor'}
                 requested={editorRequest}

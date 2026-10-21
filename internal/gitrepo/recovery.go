@@ -43,8 +43,8 @@ func replaceWorkFile(fs *os.Root, path string, before, after []byte, mode os.Fil
 		return err
 	}
 	info, err := fs.Lstat(path)
-	if err != nil || !info.Mode().IsRegular() {
-		return errors.New("文件类型已变化，请重新读取")
+	if err != nil || !info.Mode().IsRegular() || info.Mode().Perm() != mode {
+		return errors.New("文件类型或权限已变化，请重新读取")
 	}
 	current, err := fs.ReadFile(path)
 	if err != nil || string(current) != string(before) {
