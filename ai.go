@@ -261,6 +261,7 @@ func (g *Git) AnalyzeProject(ctx context.Context, root, providerID string) (Proj
 	req.Header.Set("Content-Type", "application/json")
 	if strings.TrimSpace(provider.APIKey) != "" {
 		req.Header.Set("Authorization", "Bearer "+provider.APIKey)
+	}
 	response, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return ProjectAnalysis{}, errors.New("AI 请求失败，请检查供应商地址或网络")
