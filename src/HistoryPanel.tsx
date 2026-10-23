@@ -146,9 +146,7 @@ export function HistoryPanel({
           <EmptyState
             icon={<GitCommitHorizontal size={27} />}
             title={search ? '没有匹配的提交' : '故事正要开始'}
-            text={
-              search ? '试试提交说明、作者或完整提交 ID。' : '创建第一次提交后，轨迹会显示在这里。'
-            }
+            text={search ? '未找到匹配的提交' : '暂无提交'}
           />
         ) : null}
         {!!windowed.after && <div style={{ height: windowed.after }} aria-hidden="true" />}

@@ -185,7 +185,7 @@ export function DiffPanel({
         ? '暂存区'
         : '工作区'
       : readonlyTitle
-        ? '保存的现场'
+        ? 'Stash'
         : '当前提交';
   const multipleFiles = lines.filter((l) => l.text.startsWith('diff --git ')).length > 1;
   const hasCode = lines.some((l) => l.kind === 'hunk');

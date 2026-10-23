@@ -15,9 +15,7 @@ export function SettingsPanel({
 }) {
   return (
     <div className="settings-content">
-      <h3>
-        主题色 <span>PALETTE</span>
-      </h3>
+      <h3>主题色</h3>
       <div className="palette-options">
         {palettes.map(({ id, name }) => (
           <button
@@ -28,11 +26,6 @@ export function SettingsPanel({
             disabled={saving}
             onClick={() => onChange({ ...value, palette: id })}
           >
-            <span className={`palette-sample ${id}`}>
-              <i />
-              <i />
-              <i />
-            </span>
             <span className={`theme-preview ${id}`} aria-hidden="true">
               <i />
               <span>
@@ -47,9 +40,7 @@ export function SettingsPanel({
           </button>
         ))}
       </div>
-      <h3>
-        外观 <span>APPEARANCE</span>
-      </h3>
+      <h3>外观</h3>
       <div className="appearance-options">
         {(
           [

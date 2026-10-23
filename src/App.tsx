@@ -89,7 +89,7 @@ const viewNames: Record<View, string> = {
   changes: '工作区',
   history: '提交历史',
   worktrees: '工作树',
-  stashes: '工作现场',
+  stashes: 'Stash',
   remotes: '仓库连接',
   workflow: '开发工具',
   recovery: '撤销与恢复',
@@ -801,7 +801,7 @@ export default function App() {
             active={view === 'stashes'}
             onClick={() => changeView('stashes')}
             icon={<Archive />}
-            label="工作现场"
+            label="Stash"
             count={snapshot?.stashes.length || 0}
           />
           <NavButton
@@ -957,24 +957,7 @@ export default function App() {
         </div>
         <section className="page-heading">
           <div>
-            <div className="page-kicker">YOUR CODE, IN PERSPECTIVE</div>
-            <h1>
-              {viewNames[view]}
-              <span className="heading-period">.</span>
-            </h1>
-            <p>
-              {view === 'changes'
-                ? '让每一次变更，都清晰可见。'
-                : view === 'history'
-                  ? '沿着提交的轨迹，看见代码如何生长。'
-                  : view === 'stashes'
-                    ? '给未完成的工作，留一份可以回来的现场。'
-                    : view === 'remotes'
-                      ? '让本地工作，与远程协作稳妥相连。'
-                      : view === 'worktrees'
-                        ? '一个仓库，多条并行的思路。'
-                        : '操作有迹可循，结果清晰可查。'}
-            </p>
+            <h1>{viewNames[view]}</h1>
           </div>
           <div className="heading-actions">
             {snapshot && (
@@ -1595,7 +1578,7 @@ export default function App() {
             onClose={() => setDeveloperTab(null)}
             onStarted={() => {
               setDeveloperTab(null);
-              setNotice({ kind: 'success', text: '命令已在底部终端启动，收起面板不会结束程序。' });
+              setNotice({ kind: 'success', text: '命令已启动' });
             }}
           />
         </Dialog>
@@ -1613,17 +1596,17 @@ export default function App() {
             </div>
             <h2 id="modal-title">
               {modal.kind === 'open'
-                ? '给代码一个新视角。'
+                ? '打开仓库'
                 : modal.kind === 'branch'
-                  ? '开启一条新分支。'
+                  ? '新建分支'
                   : modal.kind === 'switch'
-                    ? '切换你的工作方向。'
+                    ? '切换分支'
                     : modal.kind === 'help'
-                      ? '保持清晰，放心前行。'
+                      ? '使用帮助'
                       : modal.kind === 'publish'
-                        ? '发布当前分支。'
+                        ? '首次推送'
                         : modal.action === 'fetch'
-                          ? '获取远程更新。'
+                          ? '获取远程更新'
                           : modal.action === 'pull'
                             ? '确认拉取更新？'
                             : '确认推送到远程？'}
@@ -1694,7 +1677,7 @@ export default function App() {
               <>
                 <p className="modal-description">
                   从当前 HEAD
-                  创建并切换到新分支。为保护未提交的修改，当前工作区必须干净；可先在「工作现场」保存
+                  创建并切换到新分支。为保护未提交的修改，当前工作区必须干净；可先在「Stash」保存
                   Stash。
                 </p>
                 <label className="field-label" htmlFor="modal-input">
@@ -1845,9 +1828,7 @@ export default function App() {
             )}
             {modal.kind === 'help' && (
               <>
-                <p className="modal-description">
-                  一个轻量、克制的本地 Git 工作台。Go 负责 Git，MyGo 负责桌面，界面只展示真实状态。
-                </p>
+                <p className="modal-description">常用操作与快捷键。</p>
                 <div className="guide-steps">
                   <div>
                     <span>01</span>

@@ -53,9 +53,9 @@ export function StashPanel({
     setAction(null);
     if (action.kind === 'save') {
       const ok = await run(
-        '保存工作现场',
+        '创建 Stash',
         (root) => Git.saveStash(root, message.trim(), untracked),
-        '工作现场已保存。忽略文件不会被保存。',
+        '已创建 Stash',
       );
       if (ok) {
         setMessage('');
@@ -63,13 +63,13 @@ export function StashPanel({
       }
     } else if (action.kind === 'restore') {
       await run(
-        '恢复工作现场',
+        '应用 Stash',
         (root) => Git.restoreStash(root, action.item.hash, restoreIndex),
-        '已恢复现场，原 Stash 仍保留；确认无误后可手动删除。',
+        '已应用 Stash，记录仍保留',
       );
     } else
       await run(
-        '删除工作现场',
+        '删除 Stash',
         (root) => Git.dropStash(root, action.item.hash, action.item.ref),
         '所选 Stash 已删除。',
       );
@@ -79,7 +79,7 @@ export function StashPanel({
       <ResizableSplit
         className="stash-workbench"
         name="stash"
-        label="调整工作现场列表与差异宽度"
+        label="调整 Stash 列表与差异宽度"
         initial={0.34}
         minFirst={230}
         minSecond={300}
@@ -87,7 +87,7 @@ export function StashPanel({
         <section className="stash-list-panel" aria-label="Stash 列表">
           <div className="panel-title">
             <span>
-              保存的现场 <span className="muted-count">{snapshot.stashes.length}</span>
+              Stash <span className="muted-count">{snapshot.stashes.length}</span>
             </span>
             <button
               className="button compact"
@@ -101,7 +101,7 @@ export function StashPanel({
               onClick={() => setAction({ kind: 'save' })}
             >
               <Plus size={13} />
-              保存现场
+              创建 Stash
             </button>
           </div>
           <p className="panel-intro">任务切换前，给未完成的工作留一个位置。恢复默认保留原记录。</p>
@@ -125,7 +125,7 @@ export function StashPanel({
             {!snapshot.stashes.length && (
               <div className="empty-state">
                 <Archive size={28} />
-                <strong>还没有保存的现场</strong>
+                <strong>还没有Stash</strong>
                 <p>工作区有修改时，可以先保存，再切换分支。</p>
               </div>
             )}
@@ -139,7 +139,7 @@ export function StashPanel({
                 onClick={() => setAction({ kind: 'restore', item })}
               >
                 <ArrowDownToLine size={14} />
-                恢复现场
+                应用 Stash
               </button>
               <button
                 className="button danger-outline"
@@ -171,15 +171,15 @@ export function StashPanel({
             <div className="modal-kicker">SAKURAGIT / STASH</div>
             <h2 id="modal-title">
               {action.kind === 'save'
-                ? '先保存，再切换思路。'
+                ? '创建 Stash'
                 : action.kind === 'restore'
-                  ? '回到之前的工作现场。'
-                  : '删除这份工作现场？'}
+                  ? '应用 Stash'
+                  : '删除 Stash？'}
             </h2>
             {action.kind === 'save' ? (
               <>
                 <label className="publish-label" htmlFor="stash-message">
-                  现场说明
+                  说明
                 </label>
                 <input
                   id="stash-message"
@@ -243,10 +243,10 @@ export function StashPanel({
                 disabled={busy || (action.kind === 'save' && !message.trim())}
               >
                 {action.kind === 'save'
-                  ? '保存工作现场'
+                  ? '创建 Stash'
                   : action.kind === 'restore'
                     ? '确认恢复并保留记录'
-                    : '确认删除现场'}
+                    : '确认删除 Stash'}
               </button>
             </div>
           </form>

@@ -143,7 +143,7 @@ func startSmoke(service *Git, win *mygo.Window, page *mygo.Page, ok *atomic.Bool
 						phase = 2
 					case phase == 2 && state["settings"] == true:
 						fmt.Println("SAKURAGIT_SMOKE_SETTINGS", text)
-						_, _ = page.Eval(`document.querySelector('[aria-label="关闭对话框"]').click();document.querySelector('[aria-label="工作现场"]').click()`)
+						_, _ = page.Eval(`document.querySelector('[aria-label="关闭对话框"]').click();document.querySelector('[aria-label="Stash"]').click()`)
 						phase = 3
 					case phase == 3 && state["stashReady"] == true && (state["stashItems"] == float64(0) || state["diffLines"].(float64) > 0):
 						fmt.Println("SAKURAGIT_SMOKE_STASH", text)

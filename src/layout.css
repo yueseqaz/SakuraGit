@@ -34,16 +34,16 @@
   transition: none;
 }
 .split-handle.horizontal::after {
-  width: 2px;
+  width: 0.5px;
   top: 0;
   bottom: 0;
-  left: 3px;
+  left: 4.25px;
 }
 .split-handle.vertical::after {
-  height: 2px;
+  height: 0.5px;
   left: 0;
   right: 0;
-  top: 3px;
+  top: 4.25px;
 }
 .split-handle:hover::after,
 .split-handle:focus-visible::after,

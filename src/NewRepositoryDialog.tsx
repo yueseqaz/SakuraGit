@@ -147,7 +147,9 @@ export function NewRepositoryDialog({
         }}
       >
         <div className="modal-kicker">SAKURAGIT / NEW REPOSITORY</div>
-        <h2 id="modal-title">{submitting && !init ? '正在克隆仓库。' : '从这里，开始新项目。'}</h2>
+        <h2 id="modal-title">
+          {submitting && !init ? '正在克隆仓库' : init ? '初始化仓库' : '克隆仓库'}
+        </h2>
         <div hidden={submitting && !init}>
           <div className="appearance-options new-repo-tabs">
             <button
@@ -174,11 +176,6 @@ export function NewRepositoryDialog({
               初始化仓库
             </button>
           </div>
-          <p className="modal-description">
-            {init
-              ? '使用 main 分支开始。可以新建空目录，也可以为已有项目添加 Git 版本管理。'
-              : '支持 HTTPS、SSH 或本机仓库路径。使用系统 Git 凭据，不在软件里保存密码或 Token。'}
-          </p>
           {!init && (
             <>
               <label className="publish-label" htmlFor="clone-url">

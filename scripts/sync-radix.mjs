@@ -30,6 +30,6 @@ const data = Object.fromEntries(
 const output = JSON.stringify(data, null, 2) + '\n';
 const file = new URL('../radix-native.json', import.meta.url);
 if (process.argv.includes('--check')) {
-  if ((await readFile(file, 'utf8')) !== output)
+  if ((await readFile(file, 'utf8')).replace(/\r\n/g, '\n') !== output)
     throw new Error('Native Radix colors drifted; run scripts/sync-radix.mjs');
 } else await writeFile(file, output);

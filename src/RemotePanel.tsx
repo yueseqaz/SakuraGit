@@ -233,13 +233,13 @@ export function RemotePanel({
               </div>
             </article>
           </div>
-          <div className="connection-guide">
-            <strong>连接失败时怎么检查？</strong>
+          <details className="connection-guide">
+            <summary>连接故障排查</summary>
             <p>
               HTTPS：检查系统凭据助手和 Token
               权限。SSH：检查密钥、ssh-agent、主机指纹及仓库访问权限。需要交互确认时，请先在终端完成；错误详情会直接显示在当前操作界面。
             </p>
-          </div>
+          </details>
         </>
       )}
       {edit && (
@@ -253,10 +253,10 @@ export function RemotePanel({
             <div className="modal-kicker">SAKURAGIT / REMOTES</div>
             <h2 id="modal-title">
               {edit.action === 'add'
-                ? '连接一个远程仓库。'
+                ? '添加远程仓库'
                 : edit.action === 'remove'
-                  ? '移除这条远程连接？'
-                  : '更新仓库连接地址。'}
+                  ? '移除远程仓库？'
+                  : '编辑远程地址'}
             </h2>
             <label className="publish-label" htmlFor="remote-name">
               远程名称
@@ -317,7 +317,7 @@ export function RemotePanel({
             }}
           >
             <div className="modal-kicker">SAKURAGIT / IDENTITY</div>
-            <h2 id="modal-title">为提交留下你的署名。</h2>
+            <h2 id="modal-title">提交身份</h2>
             <p className="modal-description">
               仅写入本仓库的 user.name 和
               user.email；不修改历史提交，不改动全局设置。提交签名沿用现有 Git 配置。

@@ -458,7 +458,7 @@ export function EditorWorkbench({
           ) : (
             <div className="editor-empty">
               <FileCode2 size={32} />
-              <h2>在这里写代码</h2>
+              <h2>选择文件</h2>
               <p>选择文件，或输入仓库相对路径。</p>
               <span>⌘ / Ctrl + S 保存 / ⌘ / Ctrl + F 查找 / Ctrl + Space 基础补全</span>
             </div>
