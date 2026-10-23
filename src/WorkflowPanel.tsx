@@ -281,7 +281,7 @@ export function WorkflowPanel({
                   action === 'checkout-remote' ? remoteBranch : branch,
                   target.trim(),
                   action === 'merge'
-                    ? `将 ${branch} 合并到当前分支；冲突时会停下等待你处理`
+                    ? `将 ${branch} 合并到当前分支；冲突时暂停，等待手动处理`
                     : `确认执行 ${action === 'rename' ? '重命名' : action === 'delete' ? '安全删除' : action === 'track' ? '设置跟踪' : '远程分支检出'}：${action === 'checkout-remote' ? remoteBranch : branch}${target ? ` → ${target}` : ''}`,
                 )
               }
@@ -400,7 +400,7 @@ export function WorkflowPanel({
           <h2 id="modal-title">确认开发操作</h2>
           <p className="modal-description">{confirm.message}</p>
           <p className="safety-callout">
-            操作失败不一定意味着仓库未改变。中止流程尤其可能丢弃过程中的编辑；不会自动替你重试。
+            操作失败不一定意味着仓库未改变。中止流程尤其可能丢弃过程中的编辑；不会自动重试。
           </p>
           <div className="modal-buttons">
             <button className="button" onClick={() => setConfirm(null)}>

@@ -188,7 +188,7 @@ export function StashPanel({
                   value={message}
                   maxLength={300}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="例如：登录页做到一半，先修线上问题"
+                  placeholder="例如：保存登录页修改"
                 />
                 <label className="check-option">
                   <input

@@ -1153,7 +1153,7 @@ export default function App() {
                       <input
                         className="commit-title"
                         aria-label="提交说明"
-                        placeholder="这次做了什么改变？"
+                        placeholder="提交说明"
                         maxLength={250}
                         value={draft.title}
                         onChange={(e) => setDraft({ title: e.target.value })}
@@ -1161,7 +1161,7 @@ export default function App() {
                       />
                       <textarea
                         aria-label="提交详细说明"
-                        placeholder="添加详细说明（可选）"
+                        placeholder="详细说明（可选）"
                         value={draft.body}
                         maxLength={18000}
                         onChange={(e) => setDraft({ body: e.target.value })}
@@ -1692,7 +1692,7 @@ export default function App() {
                   autoFocus
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="feature/your-next-idea"
+                  placeholder="feature/new-feature"
                 />
                 <div className="command-preview">
                   <Terminal size={15} />
