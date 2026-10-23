@@ -25,7 +25,7 @@ describe('workbench design constraints', () => {
       )) {
         expect(Number(border[1]), `${name}: ${border[0]}`).toBe(0.5);
       }
-      expect(css, name).not.toMatch(/box-shadow\s*:\s*(?!none\b)[^;]+;/);
+      expect(css, name).not.toMatch(/box-shadow\s*:(?!\s*none\b)[^;]+;/);
     }
   });
   it('does not use middle-dot separators in product copy', () => {
