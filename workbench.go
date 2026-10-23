@@ -206,26 +206,26 @@ func (d *desktopWorkbench) terminalView(c *ui.Context) {
 				}
 			}
 			ui.Text(c, "").Grow(1)
-			if d.root != "" && ui.Button(c, "新建终端").Clicked() {
+			if d.root != "" && ui.Button(c, "＋").Clicked() {
 				go g.reportTerminalOpen(d.root, true)
 			}
-			label := "最大化"
+			label := "↗"
 			if d.expanded {
-				label = "恢复面板"
+				label = "↙"
 			}
 			if ui.Button(c, label).Clicked() {
 				d.expanded = !d.expanded
 			}
-			if active != nil && ui.Button(c, "关闭会话").Clicked() {
+			if active != nil && ui.Button(c, "×").Clicked() {
 				g.closeTerminal(active)
 			}
-			if ui.Button(c, "收起").Clicked() {
+			if ui.Button(c, "⌄").Clicked() {
 				d.hide()
 			}
 		})
 		ui.Row(c).Padding(4, 10).Children(func() {
 			ui.Text(c, d.root).Font("monospace").FontSize(12).SingleLine().Grow(1)
-			if ui.Button(c, "复制路径").Clicked() {
+			if ui.Button(c, "⧉").Clicked() {
 				c.WriteClipboard(d.root)
 			}
 		})

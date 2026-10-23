@@ -226,7 +226,7 @@ func TestTerminalNativeViewInputClipboardAndAppearance(t *testing.T) {
 	if !tt.HasText(root) || !tt.Focused("Terminal") {
 		t.Fatalf("terminal did not get initial focus: %v", tt.Texts())
 	}
-	if err := tt.Click("复制路径"); err != nil {
+	if err := tt.Click("⧉"); err != nil {
 		t.Fatal(err)
 	}
 	if tt.Clipboard() != root {

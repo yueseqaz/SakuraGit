@@ -274,6 +274,10 @@ small {
   font-size: 14px;
   color: var(--ink);
 }
+.commit-graph {
+  width: 116px;
+  max-width: 116px;
+}
 .commit-author {
   min-width: 0;
 }
@@ -301,4 +305,68 @@ small {
   gap: 8px 16px;
   color: var(--muted);
   font-size: 12px;
+}
+.project-detection {
+  margin: 12px 0;
+  padding: 10px;
+  border: 0.5px solid var(--line);
+  background: var(--canvas);
+}
+.project-detection-heading,
+.project-ai-actions,
+.detected-command,
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.project-detection-heading {
+  justify-content: space-between;
+  font-size: 12px;
+}
+.project-detection-heading span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  font-weight: 600;
+}
+.project-detection-heading code,
+.detected-command code {
+  color: var(--muted);
+  font: 12px var(--mono);
+}
+.detected-command-list {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0;
+}
+.detected-command {
+  min-width: 0;
+  justify-content: space-between;
+  padding: 4px 0;
+  border-top: 0.5px solid var(--line);
+}
+.detected-command code {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.project-ai-actions {
+  margin-top: 8px;
+}
+.project-ai-result {
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 0.5px solid var(--line);
+  color: var(--ink-secondary);
+  font-size: 12px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+.ai-provider-form {
+  margin: 10px 0;
+  padding: 10px;
+  border: 0.5px solid var(--line);
 }

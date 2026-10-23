@@ -57,7 +57,9 @@ export function HistoryPanel({
     hasMore,
     loadMore: onLoadMore,
   });
-  const graphWidth = graph.reduce((width, row) => Math.max(width, 40 + row.lane * 18), 56);
+  // Keep the graph column bounded. A very wide branch fan-out must not push
+  // commit subjects and author metadata off-screen.
+  const graphWidth = Math.min(116, graph.reduce((width, row) => Math.max(width, 40 + row.lane * 18), 56));
   return (
     <section
       className="history-panel"

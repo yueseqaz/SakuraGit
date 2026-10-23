@@ -121,6 +121,32 @@ export interface Environment {
   tools: Tool[];
 }
 
+export interface AIProvider {
+  id: string;
+  name: string;
+  baseUrl: string;
+  model: string;
+  apiKey: string;
+  enabled: boolean;
+}
+
+export interface ProjectProfile {
+  kind: string;
+  label: string;
+  packageManager: string;
+  installCommand: string;
+  commands: QuickCommand[];
+  signals: string[];
+}
+
+export interface ProjectAnalysis {
+  profile: ProjectProfile;
+  provider: string;
+  summary: string;
+  commands: QuickCommand[];
+  notes: string[];
+}
+
 export interface File {
   path: string;
   oldPath: string;
@@ -337,6 +363,18 @@ export const Git = {
   },
   developmentEnvironment(root: string, refresh: boolean): Promise<Environment> {
     return call("Git.DevelopmentEnvironment", root, refresh);
+  },
+  aiProviders(): Promise<AIProvider[]> {
+    return call("Git.AIProviders");
+  },
+  saveAIProvider(provider: AIProvider): Promise<void> {
+    return call("Git.SaveAIProvider", provider);
+  },
+  projectProfile(root: string): Promise<ProjectProfile> {
+    return call("Git.ProjectProfile", root);
+  },
+  analyzeProject(root: string, providerID: string): Promise<ProjectAnalysis> {
+    return call("Git.AnalyzeProject", root, providerID);
   },
   diagnostics(root: string): Promise<Diagnostics> {
     return call("Git.Diagnostics", root);

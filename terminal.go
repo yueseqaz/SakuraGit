@@ -223,7 +223,9 @@ func (g *Git) closeTerminal(s *repositoryTerminal) {
 func repositoryTerminalOptions(root string) terminal.Options {
 	light, dark := terminalPalette("mist")
 	return terminal.Options{
-		Dir: root, Env: []string{"GIT_TERMINAL_PROMPT=1"},
+		// Starship and other prompt renderers need a real terminal type. MyGo's
+		// default TERM=dumb disables prompt features and prints a warning.
+		Dir: root, Env: []string{"GIT_TERMINAL_PROMPT=1", "TERM=xterm-256color"},
 		Font: terminal.Font{Size: 14}, Scrollback: 10 << 20,
 		Theme: light, DarkTheme: dark,
 		ClipboardRead: terminal.ClipboardDeny, NoClipboardWrite: true,
@@ -237,7 +239,7 @@ func repositoryTerminalView(root string, term *terminal.Terminal) func(*ui.Conte
 		ui.Column(c).Fill().Children(func() {
 			ui.Row(c).Padding(10).Gap(12).Children(func() {
 				ui.Text(c, root).Font("monospace").SingleLine().Grow(1)
-				if ui.Button(c, "复制路径").Clicked() {
+					if ui.Button(c, "⧉").Clicked() {
 					c.WriteClipboard(root)
 				}
 			})

@@ -893,7 +893,7 @@ export default function App() {
           </button>
           <div className="sidebar-version">
             <span>SakuraGit</span>
-            <span>v0.9.0 MyGo</span>
+            <span>v0.10.0 MyGo</span>
           </div>
         </div>
       </aside>

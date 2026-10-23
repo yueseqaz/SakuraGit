@@ -67,7 +67,6 @@ export function RepositoryTerminalButton({
       onClick={() => void launch()}
     >
       {loading ? <LoaderCircle size={16} className="spin" /> : <Terminal size={16} />}
-      {loading ? '启动中…' : '终端'}
     </button>
   );
 }

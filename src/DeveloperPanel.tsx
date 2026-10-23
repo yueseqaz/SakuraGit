@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
 import { isMyGo } from 'mygo-runtime';
-import { Play, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
+import { Bot, Check, Play, Plus, RefreshCw, Save, Settings2, Sparkles, Trash2 } from 'lucide-react';
 import {
   Git,
   type DeveloperConfig,
   type Environment,
+  type AIProvider,
+  type ProjectAnalysis,
+  type ProjectProfile,
   type QuickCommand,
   type Variable,
 } from './mygo';
@@ -47,6 +50,11 @@ export function DeveloperPanel({
   const [detecting, setDetecting] = useState(false);
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
+  const [profile, setProfile] = useState<ProjectProfile | null>(null);
+  const [providers, setProviders] = useState<AIProvider[]>([]);
+  const [analysis, setAnalysis] = useState<ProjectAnalysis | null>(null);
+  const [aiEditing, setAiEditing] = useState<AIProvider | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
   useEffect(() => {
     let alive = true;
     if (!isMyGo()) {
@@ -74,6 +82,12 @@ export function DeveloperPanel({
       .finally(() => {
         if (alive) setDetecting(false);
       });
+    if (typeof Git.projectProfile === 'function') {
+      void Git.projectProfile(root).then(setProfile).catch(() => undefined);
+    }
+    if (typeof Git.aiProviders === 'function') {
+      void Git.aiProviders().then(setProviders).catch(() => undefined);
+    }
     return () => {
       alive = false;
     };
@@ -122,6 +136,22 @@ export function DeveloperPanel({
     }
   };
   const environmentDirty = !!config && variables !== variableText(config.variables || []);
+  const addDetected = (command: QuickCommand) => {
+    if (!config || config.commands.some((item) => item.command === command.command)) return;
+    void save({ ...config, commands: [...config.commands, { ...command, id: crypto.randomUUID() }] });
+  };
+  const analyze = async () => {
+    if (typeof Git.analyzeProject !== 'function' || analyzing) return;
+    setAnalyzing(true);
+    setError('');
+    try {
+      setAnalysis(await Git.analyzeProject(root, providers.find((provider) => provider.enabled)?.id || ''));
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setAnalyzing(false);
+    }
+  };
   return (
     <div className="developer-panel">
       <h2 id="modal-title">开发配置</h2>
@@ -166,6 +196,57 @@ export function DeveloperPanel({
               新建命令
             </button>
           </div>
+          {profile && (
+            <section className="project-detection" aria-label="项目识别">
+              <div className="project-detection-heading">
+                <span><Sparkles size={14} /> {profile.label}</span>
+                <code>{profile.packageManager || '本地检测'}</code>
+              </div>
+              {profile.commands.length > 0 && (
+                <div className="detected-command-list">
+                  {profile.commands.map((command) => (
+                    <div className="detected-command" key={command.command}>
+                      <code>{command.command}</code>
+                      <button className="icon-button" title="添加到仓库命令" aria-label={`添加 ${command.command}`} onClick={() => addDetected(command)}>
+                        <Plus size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="project-ai-actions">
+                <button className="button compact" onClick={() => void analyze()} disabled={analyzing}>
+                  {analyzing ? <RefreshCw size={13} className="spin" /> : <Bot size={13} />}
+                  {analyzing ? '分析中' : 'AI 分析'}
+                </button>
+                <button className="button compact" onClick={() => setAiEditing(providers[0] || { id: crypto.randomUUID(), name: '', baseUrl: '', model: '', apiKey: '', enabled: false })}>
+                  <Settings2 size={13} />
+                  AI 设置
+                </button>
+              </div>
+              {analysis?.summary && <p className="project-ai-result" role="status">{analysis.summary}</p>}
+            </section>
+          )}
+          {aiEditing && (
+            <form className="developer-form ai-provider-form" onSubmit={async (event) => {
+              event.preventDefault();
+              if (typeof Git.saveAIProvider !== 'function') return;
+              setWorking(true);
+              try {
+                await Git.saveAIProvider(aiEditing);
+                setProviders(await Git.aiProviders());
+                setAiEditing(null);
+                setStatus('AI 供应商已保存');
+              } catch (e) { setError(String(e)); } finally { setWorking(false); }
+            }}>
+              <label>名称<input required value={aiEditing.name} onChange={(event) => setAiEditing({ ...aiEditing, name: event.target.value })} placeholder="例如 OpenAI" /></label>
+              <label>兼容接口地址<input required value={aiEditing.baseUrl} onChange={(event) => setAiEditing({ ...aiEditing, baseUrl: event.target.value })} placeholder="https://api.example.com/v1" /></label>
+              <label>模型<input required value={aiEditing.model} onChange={(event) => setAiEditing({ ...aiEditing, model: event.target.value })} placeholder="例如 gpt-4o-mini" /></label>
+              <label>API Key<input type="password" value={aiEditing.apiKey} onChange={(event) => setAiEditing({ ...aiEditing, apiKey: event.target.value })} placeholder="本地 Ollama 可留空" /></label>
+              <label className="checkbox-row"><input type="checkbox" checked={aiEditing.enabled} onChange={(event) => setAiEditing({ ...aiEditing, enabled: event.target.checked })} />启用供应商</label>
+              <div className="modal-actions"><button type="button" className="button" onClick={() => setAiEditing(null)}>取消</button><button className="button primary" disabled={working}><Check size={13} />保存供应商</button></div>
+            </form>
+          )}
           {!config.commands.length && !editing && (
             <div className="developer-presets">
               <p>从模板创建命令</p>
