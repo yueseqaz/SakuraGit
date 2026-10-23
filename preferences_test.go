@@ -33,7 +33,7 @@ func TestPreferencesPersistence(t *testing.T) {
 	if readPreferences(path) != defaultPreferences() {
 		t.Fatal("missing file must use defaults")
 	}
-	p := Preferences{Palette: "graphite", Appearance: "dark", CodeSize: 15}
+	p := Preferences{Palette: "graphite", Appearance: "dark", CodeSize: 14}
 	if err := writePreferences(path, p); err != nil {
 		t.Fatal(err)
 	}
@@ -51,5 +51,19 @@ func TestPreferencesPersistence(t *testing.T) {
 	}
 	if readPreferences(path) != defaultPreferences() {
 		t.Fatal("malformed settings must use defaults")
+	}
+}
+
+func TestLegacyCodeSizesMigrate(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "preferences.json")
+	for _, size := range []int{11, 12, 13, 14, 15, 16} {
+		p := Preferences{Palette: "sand", Appearance: "dark", CodeSize: size}
+		if err := writePreferences(path, p); err != nil {
+			t.Fatal(err)
+		}
+		got := readPreferences(path)
+		if got != normalizePreferences(p) {
+			t.Fatalf("legacy size %d: %+v", size, got)
+		}
 	}
 }

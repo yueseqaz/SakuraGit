@@ -167,7 +167,7 @@ export function HistoryDetails({
               details.committerEmail !== c.authorEmail ||
               details.committedAt !== c.date) && (
               <p className="committer-note">
-                提交者：{details.committer} &lt;{details.committerEmail}&gt; ·{' '}
+                提交者：{details.committer} &lt;{details.committerEmail}&gt; /{' '}
                 {new Date(details.committedAt).toLocaleString('zh-CN')}
               </p>
             )}
@@ -179,10 +179,10 @@ export function HistoryDetails({
             )}
             <p className="comparison-note">
               {c.parents.length > 1
-                ? `合并提交 · 相对第一父提交 ${c.parents[0].slice(0, 7)}`
+                ? `合并提交 / 相对第一父提交 ${c.parents[0].slice(0, 7)}`
                 : c.parents.length
                   ? `相对父提交 ${c.parents[0].slice(0, 7)}`
-                  : '首次提交 · 相对空目录'}
+                  : '首次提交 / 相对空目录'}
             </p>
           </div>
           <div className="commit-files" aria-label="提交变更文件">

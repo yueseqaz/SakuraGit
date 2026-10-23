@@ -37,17 +37,14 @@ it('parses literal values and rejects duplicate or invalid variables', () => {
   expect(() => parseVariables('PATH=a\nPATH=b')).toThrow();
   expect(() => parseVariables('invalid line')).toThrow();
 });
-it('never auto-runs and requires confirmation with the full saved command', async () => {
+it('only runs the selected saved command on explicit click', async () => {
   const onStarted = vi.fn();
   await act(async () => {
     render(<DeveloperPanel root="/project" onClose={vi.fn()} onStarted={onStarted} />);
   });
   expect(Git.runDeveloperCommand).not.toHaveBeenCalled();
-  fireEvent.click(screen.getByRole('button', { name: /^运行$/ }));
-  expect(screen.getByLabelText('确认运行命令').textContent).toContain('npm run dev');
-  expect(Git.runDeveloperCommand).not.toHaveBeenCalled();
   await act(async () => {
-    fireEvent.click(screen.getByText('确认并在终端运行'));
+    fireEvent.click(screen.getByRole('button', { name: /^运行$/ }));
   });
   expect(Git.runDeveloperCommand).toHaveBeenCalledExactlyOnceWith('/project', command);
   expect(onStarted).toHaveBeenCalledOnce();

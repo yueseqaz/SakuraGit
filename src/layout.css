@@ -31,7 +31,7 @@
   content: '';
   position: absolute;
   background: var(--line);
-  transition: background 0.15s;
+  transition: none;
 }
 .split-handle.horizontal::after {
   width: 2px;
@@ -51,7 +51,7 @@
   background: var(--green);
 }
 .split-handle:focus-visible {
-  outline: 1px solid var(--green);
+  outline: 0.5px solid var(--green);
   outline-offset: -1px;
 }
 .resizing-columns,

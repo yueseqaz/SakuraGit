@@ -124,16 +124,7 @@ func (d *desktopWorkbench) persistSplit() {
 }
 
 func (d *desktopWorkbench) view(c *ui.Context) {
-	theme := *c.Theme()
-	light, dark := terminalPalette(d.palette)
-	colors := light
-	if theme.Dark {
-		colors = dark
-	}
-	theme.Background, theme.Text = colors.Background, colors.Foreground
-	theme.Accent = ui.Hex("#668ba3")
-	theme.Spacing, theme.FontSize = 3, 12
-	c.SetTheme(&theme)
+	c.SetTheme(workbenchTheme(d.palette, c.Theme().Dark))
 	if d.page == nil {
 		ui.Text(c, "SakuraGit 正在启动…")
 		return
@@ -233,23 +224,23 @@ func (d *desktopWorkbench) terminalView(c *ui.Context) {
 			}
 		})
 		ui.Row(c).Padding(4, 10).Children(func() {
-			ui.Text(c, d.root).Font("monospace").FontSize(11).SingleLine().Grow(1)
+			ui.Text(c, d.root).Font("monospace").FontSize(12).SingleLine().Grow(1)
 			if ui.Button(c, "复制路径").Clicked() {
 				c.WriteClipboard(d.root)
 			}
 		})
 		if active == nil {
-			ui.Text(c, "当前仓库没有终端会话 · 点击新建终端 · 其他仓库的会话继续在后台运行").Grow(1)
+			ui.Text(c, "暂无终端会话").Grow(1)
 		} else {
 			v := terminal.View(c, active.term).Grow(1).FillWidth()
 			if active.focus.Swap(false) {
 				v.Focus()
 			}
-			text := "真实 Shell · 收起不结束会话 · Cmd/Ctrl+` 切换面板 · 关闭会话将结束程序"
+			text := "Cmd/Ctrl+` 切换终端"
 			if !terminalRunning(active.term.Done()) {
-				text = "Shell 已退出 · 输出保留在标签中 · 点击新建终端重新启动"
+				text = "Shell 已退出"
 			}
-			ui.Text(c, text).FontSize(10).Padding(5)
+			ui.Text(c, text).FontSize(12).Padding(5)
 		}
 	})
 }
@@ -257,7 +248,7 @@ func (d *desktopWorkbench) terminalView(c *ui.Context) {
 func fmtTerminalTab(index int, active, running bool) string {
 	label := "Shell " + string(rune('1'+index))
 	if !running {
-		label += " · 已退出"
+		label += "（已退出）"
 	}
 	if active {
 		label = "● " + label
@@ -266,20 +257,21 @@ func fmtTerminalTab(index int, active, running bool) string {
 }
 
 func terminalPalette(palette string) (*terminal.Theme, *terminal.Theme) {
-	light, dark := terminal.LightTheme(), terminal.DarkTheme()
-	pairs := map[string][4]string{
-		"mist":     {"#f3f6f8", "#273d50", "#17212a", "#e0eaf1"},
-		"graphite": {"#f7f7f8", "#343740", "#202125", "#e6e7ee"},
-		"forest":   {"#f2f6f2", "#2d4439", "#192720", "#dcebe0"},
-		"sand":     {"#f8f5ee", "#514534", "#29251e", "#eee5d6"},
+	neutral, accent := paletteScales(palette)
+	makeTheme := func(dark bool) *terminal.Theme {
+		n := func(step int) ui.Color { return radixColor(neutral, step, dark) }
+		theme := &terminal.Theme{
+			Background: n(2), Foreground: n(12), Cursor: n(12), CursorText: n(2),
+			Selection: radixColor(accent, 5, dark), SelectionText: n(12),
+		}
+		for index, name := range []string{neutral, "red", "jade", "amber", "blue", "iris", "jade", neutral} {
+			theme.Palette[index] = radixColor(name, 11, dark)
+			theme.Palette[index+8] = radixColor(name, 12, dark)
+		}
+		theme.Palette[0], theme.Palette[8] = n(1), n(9)
+		return theme
 	}
-	colors, ok := pairs[palette]
-	if !ok {
-		colors = pairs["mist"]
-	}
-	light.Background, light.Foreground = ui.Hex(colors[0]), ui.Hex(colors[1])
-	dark.Background, dark.Foreground = ui.Hex(colors[2]), ui.Hex(colors[3])
-	return light, dark
+	return makeTheme(false), makeTheme(true)
 }
 
 func (g *Git) updateTerminalPreferences(p Preferences) {

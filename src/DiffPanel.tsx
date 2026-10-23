@@ -296,7 +296,7 @@ export function DiffPanel({
         <div className="diff-navigation" role="group" aria-label="改动导航">
           <button
             type="button"
-            title="上一个改动 · Shift+F7"
+            title="上一个改动 / Shift+F7"
             aria-label="上一个改动"
             disabled={!hasCode || loading}
             onClick={() => navigate(-1)}
@@ -309,7 +309,7 @@ export function DiffPanel({
           </span>
           <button
             type="button"
-            title="下一个改动 · F7"
+            title="下一个改动 / F7"
             aria-label="下一个改动"
             disabled={!hasCode || loading}
             onClick={() => navigate(1)}
@@ -343,7 +343,7 @@ export function DiffPanel({
             value={codeSize}
             onChange={(e) => onCodeSize(Number(e.target.value))}
           >
-            {[11, 12, 13, 14, 15, 16].map((size) => (
+            {[12, 14].map((size) => (
               <option key={size} value={size}>
                 {size} px
               </option>
@@ -429,8 +429,8 @@ export function DiffPanel({
           >
             {options.mode === 'split' && (
               <div className="split-column-labels">
-                <span>{before} · 修改前</span>
-                <span>{after} · 修改后</span>
+                <span>{before} / 修改前</span>
+                <span>{after} / 修改后</span>
               </div>
             )}
             {options.mode === 'split'
@@ -481,8 +481,8 @@ export function DiffPanel({
           {focused
             ? 'Esc 退出专注'
             : highlightMode === 'plain'
-              ? '纯文本 · 高亮准备中或已降级'
-              : '语法 / 行内高亮 · UTF-8'}
+              ? '纯文本 / 高亮准备中或已降级'
+              : '语法 / 行内高亮 / UTF-8'}
         </span>
       </div>
     </section>

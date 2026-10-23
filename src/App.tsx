@@ -743,7 +743,7 @@ export default function App() {
           <span className="titlebar-caption">A clearer path for your code.</span>
         </div>
         <div className="titlebar-right">
-          {!native && <span className="preview-badge">浏览器预览 · 示例数据</span>}
+          {!native && <span className="preview-badge">浏览器预览 / 示例数据</span>}
           <span className="local-dot" /> LOCAL FIRST
         </div>
       </header>
@@ -776,9 +776,7 @@ export default function App() {
           <span>克隆 / 新建仓库</span>
           <Plus size={13} />
         </button>
-        <div className="section-eyebrow">
-          WORKSPACE <span>工作空间</span>
-        </div>
+        <div className="section-eyebrow">工作空间</div>
         <nav aria-label="主导航" className="main-nav">
           <NavButton
             active={view === 'editor'}
@@ -834,7 +832,7 @@ export default function App() {
         </nav>
         <div className="sidebar-scroll">
           <div className="section-eyebrow branch-heading">
-            BRANCHES <span>本地分支</span>
+            本地分支
             <button
               className="icon-button"
               aria-label="新建分支"
@@ -867,13 +865,11 @@ export default function App() {
               ))}
             {(!snapshot || snapshot.unborn) && (
               <p className="sidebar-empty">
-                {snapshot?.unborn ? `${snapshot.branch} · 等待首次提交` : '打开仓库后显示分支'}
+                {snapshot?.unborn ? `${snapshot.branch} / 等待首次提交` : '打开仓库后显示分支'}
               </p>
             )}
           </div>
-          <div className="section-eyebrow remote-heading">
-            REMOTES <span>远程分支</span>
-          </div>
+          <div className="section-eyebrow remote-heading">远程分支</div>
           <div className="branch-list remote-list">
             {snapshot?.branches
               .filter((branch) => branch.remote)
@@ -899,9 +895,7 @@ export default function App() {
           </button>
           <div className="sidebar-version">
             <span>SakuraGit</span>
-            <span>
-              v0.8.0 <span className="tiny-dot" /> MyGo
-            </span>
+            <span>v0.9.0 MyGo</span>
           </div>
         </div>
       </aside>
@@ -1040,7 +1034,7 @@ export default function App() {
                       title="基于最近一次 Fetch 的本地已知远程状态，不代表已实时查询服务器"
                     >
                       {snapshot.ahead > 0 && snapshot.behind > 0
-                        ? '历史已分叉 · 需合并'
+                        ? '分支已分叉'
                         : snapshot.behind > 0
                           ? '有远程更新'
                           : snapshot.ahead > 0
@@ -1112,7 +1106,6 @@ export default function App() {
                     <span>
                       文件变更 <span className="muted-count">{snapshot.files.length}</span>
                     </span>
-                    <span className="mono-label">CHANGES</span>
                   </div>
                   <ResizableSplit
                     className="changes-body"
@@ -1360,7 +1353,7 @@ export default function App() {
                     snapshot={snapshot}
                     onStage={stageFiles}
                     disabled
-                    readonlyTitle="Stash · 保存的现场"
+                    readonlyTitle="Stash"
                   />
                 )}
               />
@@ -1401,12 +1394,8 @@ export default function App() {
                   <span>
                     <Workflow size={18} /> 已连接的工作树
                   </span>
-                  <span className="tag">{snapshot.worktrees.length} WORKTREES</span>
+                  <span className="tag">{snapshot.worktrees.length} 个工作树</span>
                 </div>
-                <p className="collection-intro">
-                  每个工作树都有独立的目录和工作区。这里可查看并打开已有工作树；创建与删除请暂用 Git
-                  命令行。
-                </p>
                 <div className="worktree-grid">
                   {snapshot.worktrees.map((tree) => (
                     <article
@@ -1448,13 +1437,8 @@ export default function App() {
               <span className="art-node node-three" />
               <Mark />
             </div>
-            <div className="page-kicker">LESS FRICTION. MORE FLOW.</div>
-            <h2>好代码，从清晰开始。</h2>
-            <p>
-              打开一个本地仓库，让分支、变更和每一次提交，
-              <br />
-              都有一条看得见的路径。
-            </p>
+
+            <h2>打开仓库</h2>
             <button className="button primary" disabled={!!busy} onClick={() => void loadRepo()}>
               <FolderOpen size={18} /> 打开 Git 仓库 <ArrowUpRight size={17} />
             </button>
@@ -1467,9 +1451,7 @@ export default function App() {
             </button>
             {recents.length > 0 && (
               <div className="recent-welcome">
-                <div className="section-eyebrow">
-                  RECENT REPOSITORIES <span>最近打开</span>
-                </div>
+                <div className="section-eyebrow">最近打开</div>
                 {recents.slice(0, 4).map((recent) => (
                   <button
                     key={recent.path}
@@ -1529,11 +1511,7 @@ export default function App() {
           <span className="status-divider" />
           <ShieldCheck size={12} />{' '}
           <span title={autoRefreshError || '只检查本地变化，不自动 Fetch 或 Pull'}>
-            {autoRefreshError
-              ? '自动检查失败 · 可手动刷新'
-              : native
-                ? '本地自动检查 · 不自动远程同步'
-                : '无后台自动同步'}
+            {autoRefreshError ? '自动刷新失败' : native ? '本地自动刷新' : '无后台自动同步'}
           </span>
         </span>
       </footer>
@@ -1590,7 +1568,7 @@ export default function App() {
           <div className="settings-title">
             <div>
               <div className="modal-kicker">SAKURAGIT / PREFERENCES</div>
-              <h2 id="modal-title">给专注，换一种底色。</h2>
+              <h2 id="modal-title">外观设置</h2>
             </div>
           </div>
           <SettingsPanel
@@ -1692,9 +1670,7 @@ export default function App() {
                 </button>
                 {recents.length > 0 && (
                   <div className="modal-recents">
-                    <div className="section-eyebrow">
-                      RECENT <span>最近打开</span>
-                    </div>
+                    <div className="section-eyebrow">最近打开</div>
                     {recents.map((recent) => (
                       <button
                         key={recent.path}

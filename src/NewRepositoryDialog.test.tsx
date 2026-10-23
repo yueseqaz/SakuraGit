@@ -60,7 +60,7 @@ it('invalidates discovered branches immediately when the URL changes', async () 
   await act(async () => {
     finish({ branches: ['old-branch'], defaultBranch: 'old-branch' });
   });
-  expect(screen.queryByText('old-branch · 默认')).toBeNull();
+  expect(screen.queryByText('old-branch / 默认')).toBeNull();
   expect((screen.getByLabelText('检出分支') as HTMLSelectElement).value).toBe('');
 });
 
@@ -118,7 +118,7 @@ it('shows real per-stage progress and targets cancellation to the active clone',
     fireEvent.click(screen.getByText('克隆并打开'));
   });
   expect(screen.getByText('正在接收对象')).toBeTruthy();
-  expect(screen.getByText('当前阶段 42% · 非整体进度')).toBeTruthy();
+  expect(screen.getByText('当前阶段 42%')).toBeTruthy();
   expect(screen.getByLabelText('当前阶段进度').getAttribute('value')).toBe('42');
   expect(screen.getByText(/Receiving objects:/).textContent).toContain('MiB/s');
   expect((screen.getByLabelText('仓库地址') as HTMLInputElement).disabled).toBe(true);

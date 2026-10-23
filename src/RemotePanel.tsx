@@ -45,7 +45,7 @@ export function RemotePanel({
             },
           ],
           {
-            version: 'git version 2.x · 示例',
+            version: 'git version 2.x / 示例',
             name: 'Sakura',
             email: 'sakura@example.com',
             credentialHelper: true,
@@ -112,9 +112,6 @@ export function RemotePanel({
           添加远程
         </button>
       </div>
-      <p className="collection-intro">
-        管理本仓库连接，不自动 Fetch，不修改全局 Git 配置。网络权限以实际 Fetch／Push 的结果为准。
-      </p>
       {error ? (
         <div className="panel-error">
           <ErrorDetails message={error} />

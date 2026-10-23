@@ -75,10 +75,6 @@ export function RecoveryPanel({
           重新读取
         </button>
       </div>
-      <p className="collection-intro">
-        撤销提交、恢复文件与丢弃修改是不同的操作。这里不提供 Hard
-        Reset，不删除未跟踪文件，也不自动改写远程历史。
-      </p>
       {error && <ErrorDetails message={error} />}
       {!isMyGo() && (
         <p className="collection-intro">浏览器仅供只读预览；真实恢复操作在桌面应用中提供。</p>

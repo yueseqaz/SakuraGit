@@ -66,7 +66,7 @@ export function SyncSummary({
               {pushing ? '从本地分支' : '更新本地分支'}
             </span>
             <strong>{plan.branch}</strong>
-            <small>{plan.name} · 本地</small>
+            <small>{plan.name} / 本地</small>
           </div>
           <ArrowRight size={20} className={pushing ? 'route-arrow' : 'route-arrow pull-arrow'} />
           <div className="sync-endpoint destination">

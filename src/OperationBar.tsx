@@ -56,7 +56,7 @@ export function OperationBar({ busy, hidden }: { busy: string; hidden: boolean }
     <aside className="operation-progress" aria-label="当前操作进度">
       <div>
         <strong>
-          {busy} · {canceling ? '正在停止…' : status.phase}
+          {busy} / {canceling ? '正在停止…' : status.phase}
         </strong>
         <span>{elapsed}s</span>
       </div>
@@ -67,8 +67,8 @@ export function OperationBar({ busy, hidden }: { busy: string; hidden: boolean }
       />
       <small>
         {status.percent >= 0
-          ? `当前阶段 ${status.percent}% · 非整体进度`
-          : '等待 Git / hooks 或服务器返回，不使用假百分比'}
+          ? `当前阶段 ${status.percent}%`
+          : '等待 Git 或服务器响应'}
       </small>
       {status.detail && <pre>{redactGitError(status.detail)}</pre>}
       <button

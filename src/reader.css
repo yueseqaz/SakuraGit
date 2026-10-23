@@ -8,12 +8,12 @@
   display: none;
 }
 .page-heading h1 {
-  font-size: 21px;
+  font-size: 18px;
   letter-spacing: -0.5px;
 }
 .page-heading p {
   margin-top: 4px;
-  font-size: 11px;
+  font-size: 12px;
 }
 .workspace-topbar {
   min-height: 44px;
@@ -45,7 +45,7 @@
   gap: 10px;
   min-height: 62px;
   padding: 10px 16px;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 0.5px solid var(--line);
   flex-shrink: 0;
 }
 .diff-reader-heading > svg {
@@ -60,14 +60,14 @@
   min-width: 0;
 }
 .diff-file-identity strong {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 550;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 .diff-file-identity > span {
-  font: 10px var(--mono);
+  font: 12px var(--mono);
   color: var(--muted);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -84,13 +84,13 @@
   padding: 8px 14px;
   min-height: 44px;
   background: var(--canvas);
-  border-bottom: 1px solid var(--line);
+  border-bottom: 0.5px solid var(--line);
   flex-shrink: 0;
 }
 .diff-mode-switch {
   display: flex;
-  border: 1px solid var(--line);
-  border-radius: 5px;
+  border: 0.5px solid var(--line);
+  border-radius: 4px;
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -100,18 +100,18 @@
   border: 0;
   color: var(--ink-secondary);
   padding: 5px 11px;
-  font-size: 11px;
+  font-size: 12px;
 }
 .diff-mode-switch button + button {
-  border-left: 1px solid var(--line);
+  border-left: 0.5px solid var(--line);
 }
 .diff-mode-switch button[aria-pressed='true'] {
   background: var(--green-soft);
   color: var(--green);
-  box-shadow: inset 0 0 0 1px var(--green-soft);
+  box-shadow: none;
 }
 .diff-compare-label {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--ink-secondary);
   white-space: nowrap;
 }
@@ -127,10 +127,10 @@
 }
 .diff-reading-actions select {
   padding: 4px 5px;
-  border: 1px solid var(--line);
+  border: 0.5px solid var(--line);
   background: var(--panel);
   border-radius: 4px;
-  font: 10px var(--mono);
+  font: 12px var(--mono);
 }
 .diff-reading-actions button {
   display: inline-flex;
@@ -158,7 +158,7 @@
 }
 .diff-reader .diff-line > .line-number {
   width: 42px;
-  font-size: 10px;
+  font-size: 12px;
   background: var(--canvas);
   color: var(--muted);
 }
@@ -178,7 +178,7 @@
 }
 .diff-reader .diff-line.meta {
   padding: 2px 16px;
-  font-size: 10px;
+  font-size: 12px;
   line-height: 21px;
   color: var(--muted);
   background: var(--canvas);
@@ -192,7 +192,7 @@
   min-height: 38px;
   border-block: 1px solid var(--line);
   background: var(--surface);
-  font: 10px/20px var(--mono);
+  font: 12px/18px var(--mono);
 }
 .diff-hunk + .diff-line {
   margin-top: 0;
@@ -253,11 +253,11 @@
   min-height: 26px;
 }
 .split-cell:first-child {
-  border-right: 1px solid var(--line);
+  border-right: 0.5px solid var(--line);
 }
 .split-cell .line-number {
   width: 44px;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
   background: var(--canvas);
 }
@@ -296,19 +296,19 @@
   background: var(--canvas);
   color: var(--ink-secondary);
   font:
-    10px/32px 'DM Sans Variable',
+    12px/18px 'DM Sans Variable',
     'PingFang SC',
     sans-serif;
   position: sticky;
   top: 0;
   z-index: 1;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 0.5px solid var(--line);
 }
 .split-column-labels span {
   padding-left: 16px;
 }
 .split-column-labels span:first-child {
-  border-right: 1px solid var(--line);
+  border-right: 0.5px solid var(--line);
 }
 .diff-reader:not(.wrap-lines) .split-code {
   width: max-content;
@@ -343,8 +343,8 @@
 
 .sync-summary {
   margin: 22px 0 16px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  border: 0.5px solid var(--line);
+  border-radius: 4px;
   overflow: hidden;
   background: var(--panel);
 }
@@ -369,7 +369,7 @@
   font-weight: 600;
 }
 .sync-plan-heading span {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--ink-secondary);
   line-height: 1.6;
 }
@@ -390,7 +390,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
 }
 .sync-endpoint strong {
@@ -400,7 +400,7 @@
 }
 .sync-endpoint small {
   color: var(--ink-secondary);
-  font-size: 11px;
+  font-size: 12px;
   overflow-wrap: anywhere;
 }
 .sync-endpoint.destination strong {
@@ -417,8 +417,8 @@
   align-items: flex-start;
   gap: 7px;
   padding: 11px 16px;
-  border-top: 1px solid var(--line);
-  font-size: 10px;
+  border-top: 0.5px solid var(--line);
+  font-size: 12px;
   line-height: 1.8;
   color: var(--ink-secondary);
 }
@@ -428,11 +428,11 @@
   color: var(--green);
 }
 .sync-description {
-  font-size: 11px;
+  font-size: 12px;
 }
 .sync-note,
 .sync-warning {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.8;
   padding: 0 16px;
   color: var(--ink-secondary);
@@ -448,18 +448,18 @@
 }
 .fetch-targets > span {
   width: 100%;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted);
 }
 .fetch-targets > code {
   display: flex;
   align-items: center;
   gap: 6px;
-  font: 11px var(--mono);
+  font: 12px var(--mono);
   color: var(--green);
   padding: 7px 9px;
-  border: 1px solid var(--line);
-  border-radius: 5px;
+  border: 0.5px solid var(--line);
+  border-radius: 4px;
   overflow-wrap: anywhere;
   max-width: 100%;
 }
@@ -469,7 +469,7 @@
 .command-details summary {
   color: var(--ink-secondary);
   cursor: pointer;
-  font-size: 11px;
+  font-size: 12px;
 }
 .command-details summary svg {
   vertical-align: middle;
@@ -480,15 +480,15 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 5px;
+  border: 0.5px solid var(--line);
+  border-radius: 4px;
   background: var(--surface);
-  font: 11px/1.8 var(--mono);
+  font: 12px/1.8 var(--mono);
   margin-top: 10px;
 }
 .command-details p {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.8;
 }
 
@@ -522,7 +522,7 @@
     flex-wrap: wrap;
   }
   .page-heading h1 {
-    font-size: 20px;
+    font-size: 18px;
   }
   .repository-status {
     margin: 0 14px;
@@ -557,7 +557,7 @@
     padding-inline: 9px;
   }
   .diff-reader .diff-footer {
-    font-size: 9px;
+    font-size: 12px;
   }
   .diff-reader .diff-hunk {
     padding-left: 10px;
@@ -594,26 +594,6 @@
 }
 
 /* Muted ink colors stay readable over both addition and deletion backgrounds. */
-:root {
-  --syntax-comment: #697b83;
-  --syntax-keyword: #315e94;
-  --syntax-string: #366b51;
-  --syntax-number: #946022;
-  --syntax-function: #79538b;
-  --syntax-tag: #97604b;
-  --word-add: #a4d7bc;
-  --word-remove: #edb7b4;
-}
-:root[data-theme='dark'] {
-  --syntax-comment: #91a0aa;
-  --syntax-keyword: #98bfe8;
-  --syntax-string: #aad4b4;
-  --syntax-number: #e4bb86;
-  --syntax-function: #cfb7df;
-  --syntax-tag: #e3b29e;
-  --word-add: #315d4b;
-  --word-remove: #754349;
-}
 .diff-code .token.syntax-comment,
 .diff-code .token.syntax-prolog {
   color: var(--syntax-comment);
@@ -644,12 +624,12 @@
 }
 .diff-code .add .word-change {
   background: var(--word-add);
-  box-shadow: 0 0 0 1px var(--word-add);
+  box-shadow: none;
   border-radius: 2px;
 }
 .diff-code .remove .word-change {
   background: var(--word-remove);
-  box-shadow: 0 0 0 1px var(--word-remove);
+  box-shadow: none;
   border-radius: 2px;
 }
 .history-pagination {
@@ -679,7 +659,7 @@
 }
 .clone-branch-hint {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.7;
   margin: 8px 0 12px;
 }

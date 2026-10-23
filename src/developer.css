@@ -5,7 +5,7 @@
   display: block;
   color: var(--muted);
   overflow-wrap: anywhere;
-  font-size: 11px;
+  font-size: 12px;
   margin-bottom: 16px;
 }
 .developer-tabs,
@@ -28,17 +28,17 @@
 }
 .developer-tabs {
   padding-bottom: 16px;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 0.5px solid var(--line);
   margin-bottom: 16px;
 }
 .developer-heading {
   justify-content: space-between;
   margin: 18px 0 12px;
-  font-size: 13px;
+  font-size: 14px;
 }
 .developer-heading small {
   color: var(--muted);
-  font: 10px var(--mono);
+  font: 12px var(--mono);
   margin-left: 8px;
 }
 .developer-command {
@@ -46,8 +46,8 @@
   gap: 12px;
   padding: 13px;
   margin-bottom: 8px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
+  border: 0.5px solid var(--line);
+  border-radius: 4px;
   background: var(--canvas);
 }
 .developer-command > div:first-child {
@@ -55,27 +55,27 @@
   flex: 1;
 }
 .developer-command strong {
-  font-size: 13px;
+  font-size: 14px;
 }
 .developer-command small {
   display: block;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 12px;
   margin-top: 4px;
 }
 .developer-command pre,
 .developer-confirm pre {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  font: 11px/1.7 var(--mono);
+  font: 12px/1.7 var(--mono);
   margin: 10px 0 0;
   color: var(--ink);
 }
 .developer-presets {
   background: var(--canvas);
   padding: 16px;
-  border: 1px dashed var(--line);
-  border-radius: 6px;
+  border: 0.5px dashed var(--line);
+  border-radius: 4px;
 }
 .developer-presets p {
   font-size: 12px;
@@ -89,8 +89,8 @@
   display: grid;
   gap: 12px;
   padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
+  border: 0.5px solid var(--line);
+  border-radius: 4px;
   margin-top: 16px;
 }
 .developer-form label {
@@ -104,7 +104,7 @@
   width: 100%;
   min-width: 0;
   padding: 10px;
-  border: 1px solid var(--line);
+  border: 0.5px solid var(--line);
   border-radius: 4px;
   color: var(--ink);
   background: var(--canvas);
@@ -115,15 +115,15 @@
 }
 .developer-confirm {
   background: var(--green-soft);
-  border: 1px solid var(--green);
+  border: 0.5px solid var(--green);
   padding: 16px;
   margin-top: 16px;
-  border-radius: 6px;
+  border-radius: 4px;
 }
 .developer-confirm p,
 .developer-warning {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.7;
   overflow-wrap: anywhere;
 }
@@ -139,22 +139,22 @@
 }
 .developer-tools article {
   background: var(--canvas);
-  border: 1px solid var(--line);
-  border-radius: 5px;
+  border: 0.5px solid var(--line);
+  border-radius: 4px;
   padding: 12px;
   display: grid;
   gap: 8px;
 }
 .developer-tools strong {
-  font: 13px var(--mono);
+  font: 14px var(--mono);
   color: var(--green);
 }
 .developer-tools span {
-  font-size: 11px;
+  font-size: 12px;
   overflow-wrap: anywhere;
 }
 .developer-tools code {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
   overflow-wrap: anywhere;
 }
@@ -165,7 +165,7 @@
 .developer-variable {
   display: grid;
   gap: 6px;
-  font-size: 11px;
+  font-size: 12px;
 }
 .developer-variable code {
   white-space: pre-wrap;
@@ -185,8 +185,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 10px 12px;
-  border-bottom: 1px solid var(--line);
-  font: 10px var(--mono);
+  border-bottom: 0.5px solid var(--line);
+  font: 12px var(--mono);
   color: var(--muted);
 }
 .binary-viewer > pre {
@@ -196,7 +196,7 @@
   padding: 16px;
   color: var(--ink);
   background: var(--canvas);
-  font: 11px/1.8 var(--mono);
+  font: 12px/1.8 var(--mono);
 }
 .binary-image {
   flex: 1;

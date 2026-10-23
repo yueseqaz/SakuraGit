@@ -135,17 +135,17 @@ export function ConflictPanel({
             minSecond={160}
           >
             <div className="merge-sources">
-              <MergeSource title="共同祖先 · Base" text={details.base} />
-              <MergeSource title="第 2 阶段 · Ours" text={details.ours} />
-              <MergeSource title="第 3 阶段 · Theirs" text={details.theirs} />
+              <MergeSource title="共同祖先 / Base" text={details.base} />
+              <MergeSource title="第 2 阶段 / Ours" text={details.ours} />
+              <MergeSource title="第 3 阶段 / Theirs" text={details.theirs} />
             </div>
             <div className="merge-result">
               <div className="merge-result-heading">
                 <strong>合并结果</strong>
                 <span>
                   {markers
-                    ? `${blocks.length} 个可识别冲突块 · 可手动编辑`
-                    : '无冲突标记 · 请审阅结果再保存'}
+                    ? `${blocks.length} 个可识别冲突块 / 可手动编辑`
+                    : '无冲突标记 / 请审阅结果再保存'}
                 </span>
                 <button
                   className="button compact"

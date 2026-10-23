@@ -145,7 +145,7 @@ export function useSplitLayout({
       aria-valuetext={`${Math.round(effective * 100)}%`}
       tabIndex={0}
       className={`split-handle ${axis} ${name === 'sidebar' ? 'sidebar-handle' : ''} ${dragging ? 'dragging' : ''}`}
-      title="拖动调整大小 · 双击恢复默认 · 方向键微调 · Esc 取消拖动"
+      title="拖动调整大小 / 双击恢复默认 / 方向键微调 / Esc 取消拖动"
       onPointerDown={start}
       onDoubleClick={() => {
         setRatio(initial);

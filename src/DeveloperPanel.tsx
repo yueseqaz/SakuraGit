@@ -9,7 +9,6 @@ import {
   type Variable,
 } from './mygo';
 import { ErrorDetails } from './ErrorDetails';
-import './developer.css';
 
 const variableText = (variables: Variable[]) =>
   variables.map((v) => `${v.name}=${v.value}`).join('\n');
@@ -44,7 +43,6 @@ export function DeveloperPanel({
   const [environment, setEnvironment] = useState<Environment | null>(null);
   const [variables, setVariables] = useState('');
   const [editing, setEditing] = useState<QuickCommand | null>(null);
-  const [confirm, setConfirm] = useState<QuickCommand | null>(null);
   const [working, setWorking] = useState(false);
   const [detecting, setDetecting] = useState(false);
   const [error, setError] = useState('');
@@ -97,7 +95,7 @@ export function DeveloperPanel({
     try {
       await Git.saveDeveloperConfig(root, next);
       setConfig(next);
-      setStatus('已保存到本机，仅此仓库生效。');
+      setStatus('已保存');
       return true;
     } catch (e) {
       setError(String(e));
@@ -108,15 +106,14 @@ export function DeveloperPanel({
   };
   const add = (name = '', command = '') => {
     setEditing({ id: crypto.randomUUID(), name, command, directory: '' });
-    setConfirm(null);
     setStatus('');
   };
-  const launch = async () => {
-    if (!confirm || working) return;
+  const launch = async (command: QuickCommand) => {
+    if (working || environmentDirty || detecting || editing) return;
     setWorking(true);
     setError('');
     try {
-      await Git.runDeveloperCommand(root, confirm);
+      await Git.runDeveloperCommand(root, command);
       onStarted();
     } catch (e) {
       setError(String(e));
@@ -127,11 +124,7 @@ export function DeveloperPanel({
   const environmentDirty = !!config && variables !== variableText(config.variables || []);
   return (
     <div className="developer-panel">
-      <div className="modal-kicker">SAKURAGIT / LOCAL DEVELOPMENT</div>
-      <h2 id="modal-title">环境就绪，一键开工。</h2>
-      <p className="modal-description">
-        配置只保存在本机，不写入仓库。命令使用检测到的 Shell，在底部独立终端运行，不会自动启动。
-      </p>
+      <h2 id="modal-title">开发配置</h2>
       <code className="developer-root">{root}</code>
       <div className="developer-tabs" role="tablist" aria-label="开发配置">
         <button
@@ -162,7 +155,7 @@ export function DeveloperPanel({
         <>
           <div className="developer-heading">
             <strong>
-              此仓库的启动入口 <small>{config.commands.length} / 30</small>
+              仓库命令 <small>{config.commands.length} / 30</small>
             </strong>
             <button
               className="button compact"
@@ -175,7 +168,7 @@ export function DeveloperPanel({
           </div>
           {!config.commands.length && !editing && (
             <div className="developer-presets">
-              <p>还没有快捷命令。选一个模板，检查后保存：</p>
+              <p>从模板创建命令</p>
               {[
                 ['Node 开发', 'npm run dev'],
                 ['Go 运行', 'go run .'],
@@ -199,7 +192,7 @@ export function DeveloperPanel({
                 <button
                   className="button compact primary"
                   disabled={working || environmentDirty || !!editing || detecting}
-                  onClick={() => setConfirm(command)}
+                  onClick={() => void launch(command)}
                 >
                   <Play size={13} />
                   运行
@@ -209,7 +202,6 @@ export function DeveloperPanel({
                   disabled={working}
                   onClick={() => {
                     setEditing({ ...command });
-                    setConfirm(null);
                   }}
                 >
                   编辑
@@ -262,8 +254,7 @@ export function DeveloperPanel({
                 />
               </label>
               <p className="theme-note">
-                支持参数、管道与多行脚本。会以你的账号权限执行，只添加可信命令。Windows 使用
-                PowerShell 语法。
+                仅添加可信命令，将以当前用户权限运行。Windows 使用 PowerShell。
               </p>
               <div className="modal-actions">
                 <button
@@ -300,32 +291,6 @@ export function DeveloperPanel({
               </div>
             </form>
           )}
-          {confirm && (
-            <section className="developer-confirm" aria-label="确认运行命令">
-              <strong>运行「{confirm.name}」？</strong>
-              <p>
-                工作目录：{confirm.directory || '仓库根目录'} · Shell：
-                {environment?.shell || '系统 Shell'}
-              </p>
-              <pre>{confirm.command}</pre>
-              <p>
-                命令可修改文件、访问网络和启动服务。未保存的编辑不会自动写入；终端中 Ctrl+C
-                停止程序，关闭会话仍需确认。
-              </p>
-              <div className="modal-actions">
-                <button className="button" disabled={working} onClick={() => setConfirm(null)}>
-                  暂不运行
-                </button>
-                <button
-                  className="button primary"
-                  disabled={working || environmentDirty || detecting}
-                  onClick={() => void launch()}
-                >
-                  {working ? '正在启动…' : '确认并在终端运行'}
-                </button>
-              </div>
-            </section>
-          )}
         </>
       )}
       {tab === 'environment' && (
@@ -341,15 +306,12 @@ export function DeveloperPanel({
               {detecting ? '正在检测…' : '重新读取环境'}
             </button>
           </div>
-          <p className="theme-note">
-            macOS / Linux 读取登录 Shell（可能执行你自己的 Shell 启动配置）；Windows
-            读取用户与系统环境。只在主目录检测工具版本，不读取项目 .env，不安装软件。
-          </p>
+          <p className="theme-note">macOS / Linux 读取登录 Shell，Windows 读取系统环境。</p>
           {environment?.warning && <p className="developer-warning">{environment.warning}</p>}
           {environment && (
             <>
               <p className="theme-note">
-                来源：{environment.source} · {environment.shell}
+                来源：{environment.source} / {environment.shell}
               </p>
               <div className="developer-tools">
                 {environment.tools.map((tool) => (
@@ -397,13 +359,9 @@ export function DeveloperPanel({
                 />
               </label>
               <p className="theme-note">
-                每行 KEY=value，值按字面使用，不展开 $PATH、%PATH% 或 ~。PATH
-                请填写完整路径列表。仅新建终端 / 新运行的命令生效；不会修改系统配置。
+                每行 KEY=value，不展开变量。PATH 需填写完整路径列表；对新会话生效。
               </p>
-              <p className="developer-warning">
-                自定义值以本机文件明文保存，不建议填写密码或
-                Token。此处不会枚举或展示其他继承的敏感变量。
-              </p>
+              <p className="developer-warning">配置以明文保存在本机，请勿填写密码或 Token。</p>
               <div className="modal-actions">
                 <button
                   className="button"

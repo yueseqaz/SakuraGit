@@ -8,7 +8,7 @@
 
 SakuraGit 是一个使用 **MyGo + Go + React + TypeScript** 构建的轻量 Git 桌面客户端。它用系统 WebView 渲染界面，通过系统 Git 操作本地仓库，**不捆绑 Chromium**。雾霾蓝主题、可拖动面板和专注 Diff 阅读，让日常提交、代码审阅和分支操作更直观。
 
-> 当前版本：**0.8.0，早期开发阶段**。已在 macOS Apple Silicon 上构建和测试，仍有明确的功能边界；不代表已完成生产环境或跨平台验证。目前界面以中文为主，英文文档不代表已实现英文界面。
+> 当前版本：**0.9.0，早期开发阶段**。已在 macOS Apple Silicon 上构建和测试，仍有明确的功能边界；不代表已完成生产环境或跨平台验证。目前界面以中文为主，英文文档不代表已实现英文界面。
 
 ![SakuraGit 工作区](docs/screenshots/workspace.png)
 
@@ -63,7 +63,7 @@ SakuraGit 是一个使用 **MyGo + Go + React + TypeScript** 构建的轻量 Git
 ## 开发环境与快捷启动
 
 - 顶部 **快捷启动** 或设置中的 **配置开发环境** 可检测 Java / javac、Go、PHP、Node、npm、pnpm、Yarn、Composer 的路径和版本。macOS / Linux 从用户主目录读取登录 Shell 环境（会运行用户自己的启动配置），Windows 读取用户 / 系统环境；不安装软件，不修改系统变量，不读取仓库 .env。
-- 为每个仓库配置命令名称、Shell 脚本和相对工作目录（不能是符号链接、Git 元数据或嵌套仓库）。配置只保存在本机应用数据目录，不进入仓库；保存命令不会执行，运行前展示完整脚本确认，在底部独立终端标签执行。Windows 使用 PowerShell 语法。
+- 为每个仓库配置命令名称、Shell 脚本和相对工作目录（不能是符号链接、Git 元数据或嵌套仓库）。配置只保存在本机应用数据目录，不进入仓库；保存命令不会执行，列表展示完整脚本，点击运行后在底部独立终端标签执行。Windows 使用 PowerShell 语法。
 - 支持此仓库的环境变量覆盖：每行 `KEY=value`，值按字面使用，不展开 `$PATH`、`%PATH%` 或 `~`，PATH 需填写完整列表。环境只影响后续新会话；普通 Shell 自己的启动配置仍可能覆盖变量。自定义值明文保存在本机，不建议填写密码或 Token。
 - 快捷命令拥有当前用户权限，可以改文件、访问网络和启动服务，不是沙箱；不会自动保存编辑器内容。用终端 `Ctrl+C` 停止程序，关闭运行中会话仍需确认；不保证结束已脱离终端的后台服务。
 
@@ -133,7 +133,7 @@ npm run build
 
 ```text
 build/darwin-arm64/SakuraGit.app
-build/darwin-arm64/SakuraGit 0.8.0 arm64.dmg
+build/darwin-arm64/SakuraGit 0.9.0 arm64.dmg
 ```
 
 ```sh
@@ -149,7 +149,7 @@ build/darwin-arm64/SakuraGit.app/Contents/MacOS/SakuraGit --repo /absolute/path/
 
 - **调整面板**：拖动区块之间的分隔线；双击恢复该处默认比例。聚焦分隔线后用方向键微调，Shift 加大步长，Esc 取消当前拖动。比例保存在本机；窄窗口改为堆叠布局。
 - **阅读历史**：每批 100 条，接近底部自动加载，超过 300 条时使用虚拟列表。搜索说明、作者、邮箱或提交 ID 会搜索整个本地可达历史，不限首屏。
-- **外观设置**：左下角「设置与外观」，或 `Cmd/Ctrl + ,`。Diff 支持 11–16 px 字号与 Esc 退出专注阅读。
+- **外观设置**：左下角「设置与外观」，或 `Cmd/Ctrl + ,`。代码区域支持 12 / 14 px 字号与 Esc 退出专注阅读。
 - **同步与认证**：复用系统 Git 的 SSH、凭据助手和签名配置；如需交互式认证，请先在终端完成。软件不保存账号密码，也不接受 URL 内嵌凭据。
 - **本地状态**：按仓库保存草稿、恢复上次页面和文件选择。为兼容旧名 Gitlane，保留原应用标识、`Gitlane` 用户数据目录和 `gitlane.*` 本机缓存键；不是把个人配置写入源码仓库。
 
@@ -195,8 +195,8 @@ scripts/native-smoke.sh build/darwin-arm64/SakuraGit.app/Contents/MacOS/SakuraGi
 发布新版本时，更新版本号和发布说明，先确认 `main` 的 CI 通过，再执行：
 
 ```sh
-git tag v0.8.0  # 示例：替换为对应的新版本号
-git push origin v0.8.0
+git tag v0.9.0  # 示例：替换为对应的新版本号
+git push origin v0.9.0
 ```
 
 工作流见 [CI](.github/workflows/ci.yml)、[跨平台构建](.github/workflows/build.yml) 和 [Release](.github/workflows/release.yml)。尚未配置应用内自动更新、Apple 公证或 Windows 签名证书。
@@ -223,3 +223,13 @@ scripts/native-smoke.sh   独立本地仓库的原生冒烟测试
 欢迎通过 [Issues](https://github.com/yueseqaz/SakuraGit/issues) 提交问题。请说明系统、版本、复现步骤和已脱敏的错误信息，**不要上传 Token、私钥或私有仓库内容**。
 
 本项目暂未指定开源许可证；公开可见不等于已授予任意使用、修改或再分发许可。依赖与字体的许可分别归其各自作者所有。
+
+## 界面规范 / Interface Design
+
+界面使用 Radix UI Colors，四种配色均提供浅色、深色和跟随系统模式。色阶 1–2 用于背景，3–5 用于交互状态，6–8 用于边框，11–12 用于文字。浅色主按钮使用较深色阶以保证小字号对比度。编辑器、Diff、提交图和内置终端的默认颜色保持一致。
+
+界面字号统一为 12 / 14 / 18 px，组件边框为 0.5 px。移除装饰性过渡、阴影及左侧色条；仅保留表示后台工作的进度动画。旧代码字号自动迁移到 12 / 14 px，其他设置与仓库数据保留。
+
+The workbench uses Radix UI Colors across four palettes and light/dark modes. Semantic roles separate backgrounds, interaction states, borders and text. Typography uses 12 / 14 / 18 px with 0.5 px component borders. Decorative transitions, shadows and colored card stripes are removed. Existing code-size preferences migrate to 12 / 14 px without changing repositories or other settings. Saved quick commands run only when explicitly selected; saving configuration never executes a script. Destructive Git actions and running-terminal closure retain their confirmations.
+
+Radix references: [Scale usage](https://www.radix-ui.com/colors/docs/palette-composition/understanding-the-scale), [Color accessibility](https://www.radix-ui.com/colors/docs/palette-composition/understanding-the-scale#steps-1112-high-contrast-text).

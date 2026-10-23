@@ -109,9 +109,6 @@ export function WorkflowPanel({
           重新读取
         </button>
       </div>
-      <p className="collection-intro">
-        所有写操作都需要确认，并校验仓库是否已变化。不会强推、强删分支或自动替你选择冲突一侧。
-      </p>
       {error && <ErrorDetails message={error} />}
       {!current && !error && <p>正在读取开发状态…</p>}
       {current && (
@@ -311,7 +308,7 @@ export function WorkflowPanel({
               <option value="vscode">Visual Studio Code</option>
               <option value="cursor">Cursor</option>
               <option value="zed">Zed</option>
-              <option value="textedit">TextEdit · macOS</option>
+              <option value="textedit">TextEdit / macOS</option>
             </select>
             <div className="workflow-actions">
               <button className="button" onClick={() => void open('', 'editor')}>

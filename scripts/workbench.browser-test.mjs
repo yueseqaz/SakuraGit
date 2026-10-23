@@ -210,10 +210,59 @@ try {
     );
     return { page, failures };
   }
+  async function checkDesign(page) {
+    const result = await page.evaluate(() => {
+      const invalidText = [...document.querySelectorAll('body *')].flatMap((element) => {
+        const style = getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        const hasText = [...element.childNodes].some(
+          (node) => node.nodeType === 3 && node.textContent.trim(),
+        );
+        if (
+          !hasText ||
+          !rect.width ||
+          !rect.height ||
+          style.visibility === 'hidden' ||
+          style.fontSize === '0px'
+        )
+          return [];
+        return [12, 14, 18].includes(parseFloat(style.fontSize))
+          ? []
+          : [`${element.className}: ${style.fontSize}`];
+      });
+      const sample = document.createElement('button');
+      sample.className = 'button primary';
+      document.body.append(sample);
+      const style = getComputedStyle(sample);
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 1;
+      const context = canvas.getContext('2d');
+      const luminance = (color) => {
+        context.fillStyle = color;
+        context.fillRect(0, 0, 1, 1);
+        const channels = [...context.getImageData(0, 0, 1, 1).data].slice(0, 3).map((value) => {
+          const v = value / 255;
+          return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+        });
+        return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+      };
+      const values = [luminance(style.color), luminance(style.backgroundColor)].sort(
+        (a, b) => a - b,
+      );
+      sample.remove();
+      return { invalidText, contrast: (values[1] + 0.05) / (values[0] + 0.05) };
+    });
+    assert.deepEqual(result.invalidText, [], 'visible UI uses only the approved text sizes');
+    assert.ok(
+      result.contrast >= 4.5,
+      `primary label contrast ${result.contrast} must meet WCAG AA`,
+    );
+  }
   for (const palette of ['mist', 'graphite', 'forest', 'sand'])
     for (const mode of ['light', 'dark']) {
       const { page, failures } = await fixture(palette, mode);
       await page.getByRole('button', { name: '并排', exact: true }).click();
+      await checkDesign(page);
       await page.screenshot({ path: `${output}/${palette}-${mode}-workspace.png` });
       assert.equal(
         await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1),
@@ -225,6 +274,7 @@ try {
       const code = page.getByRole('textbox', { name: `编辑代码 ${patch.path}` });
       await code.waitFor();
       await page.locator('.cm-content .cm-line span').first().waitFor();
+      await checkDesign(page);
       await code.click();
       await page.keyboard.press('ControlOrMeta+End');
       await page.keyboard.insertText('// editor fixture\n');
@@ -258,6 +308,7 @@ try {
         await page.getByLabel('设置与外观').click();
         await page.getByRole('button', { name: /苔原绿/ }).click();
         await page.waitForFunction(() => document.documentElement.dataset.palette === 'forest');
+        await checkDesign(page);
         await page.screenshot({ path: `${output}/theme-settings.png` });
       }
       assert.deepEqual(failures, []);
@@ -279,6 +330,7 @@ try {
     await page.getByRole('button', { name: '运行', exact: true }).waitFor();
     await page.getByRole('tab', { name: '开发环境', exact: true }).click();
     await page.getByText('UI fixture only', { exact: false }).waitFor();
+    await checkDesign(page);
     await page.screenshot({ path: `${output}/environment-${mode}.png` });
     assert.equal(
       await page.evaluate(() =>
@@ -287,9 +339,9 @@ try {
       false,
     );
     await page.getByRole('tab', { name: '快捷命令', exact: true }).click();
-    await page.getByRole('button', { name: '运行', exact: true }).click();
+    await checkDesign(page);
     await page.screenshot({ path: `${output}/commands-${mode}.png` });
-    await page.getByRole('button', { name: '确认并在终端运行', exact: true }).click();
+    await page.getByRole('button', { name: '运行', exact: true }).click();
     await page.waitForFunction(() =>
       window.__fixtureCalls.some((c) => c.method === 'Git.RunDeveloperCommand'),
     );

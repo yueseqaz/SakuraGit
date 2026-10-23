@@ -1,0 +1,143 @@
+@import '@radix-ui/colors/slate.css';
+@import '@radix-ui/colors/slate-dark.css';
+@import '@radix-ui/colors/gray.css';
+@import '@radix-ui/colors/gray-dark.css';
+@import '@radix-ui/colors/sage.css';
+@import '@radix-ui/colors/sage-dark.css';
+@import '@radix-ui/colors/sand.css';
+@import '@radix-ui/colors/sand-dark.css';
+@import '@radix-ui/colors/blue.css';
+@import '@radix-ui/colors/blue-dark.css';
+@import '@radix-ui/colors/jade.css';
+@import '@radix-ui/colors/jade-dark.css';
+@import '@radix-ui/colors/bronze.css';
+@import '@radix-ui/colors/bronze-dark.css';
+@import '@radix-ui/colors/red.css';
+@import '@radix-ui/colors/red-dark.css';
+@import '@radix-ui/colors/amber.css';
+@import '@radix-ui/colors/amber-dark.css';
+@import '@radix-ui/colors/iris.css';
+@import '@radix-ui/colors/iris-dark.css';
+@import '@radix-ui/colors/ruby.css';
+@import '@radix-ui/colors/ruby-dark.css';
+@import '@radix-ui/colors/black-alpha.css';
+
+/* Radix: 1–2 surfaces, 3–5 interaction, 6–8 borders, 11–12 readable text.
+   Light solid buttons use step 11 for contrast with small white labels. */
+:root {
+  color-scheme: light;
+  --canvas: var(--slate-1);
+  --panel: var(--slate-2);
+  --sidebar: var(--slate-2);
+  --surface: var(--slate-3);
+  --surface-hover: var(--slate-4);
+  --surface-pressed: var(--slate-5);
+  --line: var(--slate-6);
+  --control-line: var(--slate-7);
+  --ink: var(--slate-12);
+  --ink-secondary: var(--slate-11);
+  --muted: var(--slate-11);
+  --green: var(--blue-11);
+  --green-hover: var(--blue-12);
+  --green-soft: var(--blue-3);
+  --accent-border: var(--blue-8);
+  --accent-solid: var(--blue-11);
+  --accent-solid-hover: var(--blue-12);
+  --on-accent: var(--gray-1);
+  --red: var(--red-11);
+  --add: var(--jade-11);
+  --add-bg: var(--jade-3);
+  --remove: var(--red-11);
+  --remove-bg: var(--red-3);
+  --warning: var(--amber-11);
+  --warning-soft: var(--amber-3);
+  --warning-line: var(--amber-7);
+  --shadow-color: var(--black-a8);
+  --syntax-comment: var(--slate-11);
+  --syntax-keyword: var(--blue-11);
+  --syntax-string: var(--jade-11);
+  --syntax-number: var(--bronze-11);
+  --syntax-function: var(--iris-11);
+  --syntax-tag: var(--ruby-11);
+  --word-add: var(--jade-5);
+  --word-remove: var(--red-5);
+  --editor-keyword: var(--syntax-keyword);
+  --editor-string: var(--syntax-string);
+  --editor-number: var(--syntax-number);
+  --editor-function: var(--syntax-function);
+}
+:root[data-palette='graphite'] {
+  --canvas: var(--gray-1);
+  --panel: var(--gray-2);
+  --sidebar: var(--gray-2);
+  --surface: var(--gray-3);
+  --surface-hover: var(--gray-4);
+  --surface-pressed: var(--gray-5);
+  --line: var(--gray-6);
+  --control-line: var(--gray-7);
+  --ink: var(--gray-12);
+  --ink-secondary: var(--gray-11);
+  --muted: var(--gray-11);
+  --green: var(--gray-12);
+  --green-hover: var(--gray-11);
+  --green-soft: var(--gray-4);
+  --accent-border: var(--gray-8);
+  --accent-solid: var(--gray-12);
+  --accent-solid-hover: var(--gray-11);
+}
+:root[data-palette='forest'] {
+  --canvas: var(--sage-1);
+  --panel: var(--sage-2);
+  --sidebar: var(--sage-2);
+  --surface: var(--sage-3);
+  --surface-hover: var(--sage-4);
+  --surface-pressed: var(--sage-5);
+  --line: var(--sage-6);
+  --control-line: var(--sage-7);
+  --ink: var(--sage-12);
+  --ink-secondary: var(--sage-11);
+  --muted: var(--sage-11);
+  --green: var(--jade-11);
+  --green-hover: var(--jade-12);
+  --green-soft: var(--jade-3);
+  --accent-border: var(--jade-8);
+  --accent-solid: var(--jade-11);
+  --accent-solid-hover: var(--jade-12);
+}
+:root[data-palette='sand'] {
+  --canvas: var(--sand-1);
+  --panel: var(--sand-2);
+  --sidebar: var(--sand-2);
+  --surface: var(--sand-3);
+  --surface-hover: var(--sand-4);
+  --surface-pressed: var(--sand-5);
+  --line: var(--sand-6);
+  --control-line: var(--sand-7);
+  --ink: var(--sand-12);
+  --ink-secondary: var(--sand-11);
+  --muted: var(--sand-11);
+  --green: var(--bronze-11);
+  --green-hover: var(--bronze-12);
+  --green-soft: var(--bronze-3);
+  --accent-border: var(--bronze-8);
+  --accent-solid: var(--bronze-11);
+  --accent-solid-hover: var(--bronze-12);
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --accent-solid: var(--blue-9);
+  --accent-solid-hover: var(--blue-10);
+  --on-accent: var(--slate-1);
+}
+:root[data-theme='dark'][data-palette='graphite'] {
+  --accent-solid: var(--gray-12);
+  --accent-solid-hover: var(--gray-11);
+}
+:root[data-theme='dark'][data-palette='forest'] {
+  --accent-solid: var(--jade-9);
+  --accent-solid-hover: var(--jade-10);
+}
+:root[data-theme='dark'][data-palette='sand'] {
+  --accent-solid: var(--bronze-9);
+  --accent-solid-hover: var(--bronze-10);
+}

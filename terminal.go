@@ -221,22 +221,19 @@ func (g *Git) closeTerminal(s *repositoryTerminal) {
 }
 
 func repositoryTerminalOptions(root string) terminal.Options {
-	light, dark := terminal.LightTheme(), terminal.DarkTheme()
-	light.Background, light.Foreground = ui.Hex("#f3f6f8"), ui.Hex("#263b49")
-	dark.Background, dark.Foreground = ui.Hex("#17212a"), ui.Hex("#d8e4eb")
+	light, dark := terminalPalette("mist")
 	return terminal.Options{
 		Dir: root, Env: []string{"GIT_TERMINAL_PROMPT=1"},
-		Font: terminal.Font{Size: 13}, Scrollback: 10 << 20,
+		Font: terminal.Font{Size: 14}, Scrollback: 10 << 20,
 		Theme: light, DarkTheme: dark,
 		ClipboardRead: terminal.ClipboardDeny, NoClipboardWrite: true,
 	}
 }
 
 func repositoryTerminalView(root string, term *terminal.Terminal) func(*ui.Context) {
+	palette := loadPreferences().Palette
 	return func(c *ui.Context) {
-		theme := *c.Theme()
-		theme.Accent = ui.Hex("#668ba3")
-		c.SetTheme(&theme)
+		c.SetTheme(workbenchTheme(palette, c.Theme().Dark))
 		ui.Column(c).Fill().Children(func() {
 			ui.Row(c).Padding(10).Gap(12).Children(func() {
 				ui.Text(c, root).Font("monospace").SingleLine().Grow(1)
@@ -245,11 +242,11 @@ func repositoryTerminalView(root string, term *terminal.Terminal) func(*ui.Conte
 				}
 			})
 			terminal.View(c, term).Grow(1).FillWidth().AutoFocus()
-			status := "真实 Shell · 命令不受 Git 按钮限制 · Ctrl+C 中断 · 右键复制/粘贴 · 按住 Cmd/Ctrl 滚轮缩放"
+			status := "Ctrl+C 中断程序"
 			if !terminalRunning(term.Done()) {
-				status = fmt.Sprintf("Shell 已退出（%d）· 输出保留在当前标签 · 新建终端可重新启动", term.ExitCode())
+				status = fmt.Sprintf("Shell 已退出（%d）", term.ExitCode())
 			}
-			ui.Text(c, status).FontSize(11).Padding(8)
+			ui.Text(c, status).FontSize(12).Padding(8)
 		})
 	}
 }

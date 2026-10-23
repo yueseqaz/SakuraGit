@@ -26,8 +26,8 @@ export function BinaryViewer({
     <section className="binary-viewer" aria-label="二进制只读预览">
       <header>
         <span>
-          {preview.size.toLocaleString()} 字节 · {preview.image ? preview.mime : '十六进制 / ASCII'}{' '}
-          · 只读
+          {preview.size.toLocaleString()} 字节 / {preview.image ? preview.mime : '十六进制 / ASCII'}{' '}
+          / 只读
         </span>
         {!preview.image && (
           <div className="binary-pagination">
@@ -59,10 +59,6 @@ export function BinaryViewer({
       ) : (
         <pre tabIndex={0}>{rows.join('\n') || '空文件'}</pre>
       )}
-      <p className="editor-tree-note">
-        不执行文件、不转换编码、不写入磁盘。PNG / JPEG / GIF 在 4 MB、1600
-        万像素以内显示图片，其余按每页 4 KB 查看。翻页读取当前磁盘，不是固定快照。
-      </p>
     </section>
   );
 }

@@ -63,7 +63,7 @@ export function parseDiff(text: string, limit?: number): DiffLine[] {
     });
 }
 
-export const graphColors = ['var(--green)', '#bf9465', '#7b90b5', '#b17e8b', '#759287'];
+export const graphColors = ['var(--blue-9)', 'var(--bronze-9)', 'var(--iris-9)', 'var(--ruby-9)', 'var(--jade-9)'];
 export type GraphRow = {
   lane: number;
   color: string;

@@ -108,7 +108,7 @@ function FileTree({
           <RefreshCw size={14} />
         </button>
       </header>
-      <p className="editor-tree-note">工作目录 · 含未跟踪和忽略文件 · 不含 Git 元数据</p>
+
       {error && <ErrorDetails message={error} />}
       {loading[''] && <p className="editor-tree-note">正在读取…</p>}
       <div className="editor-tree">{rows('', 0)}</div>
@@ -459,8 +459,8 @@ export function EditorWorkbench({
             <div className="editor-empty">
               <FileCode2 size={32} />
               <h2>在这里写代码</h2>
-              <p>从左侧选择文件，或输入仓库相对路径。保存只更新工作区，不自动暂存或提交。</p>
-              <span>⌘ / Ctrl + S 保存 · ⌘ / Ctrl + F 查找 · Ctrl + Space 基础补全</span>
+              <p>选择文件，或输入仓库相对路径。</p>
+              <span>⌘ / Ctrl + S 保存 / ⌘ / Ctrl + F 查找 / Ctrl + Space 基础补全</span>
             </div>
           )}
           {documents.map((d) => {
@@ -507,15 +507,12 @@ export function EditorWorkbench({
           <footer className="editor-status">
             <span>
               {selected?.preview
-                ? '二进制 · 只读预览'
+                ? '二进制 / 只读预览'
                 : selected
-                  ? `Ln ${cursor.line}, Col ${cursor.column} · UTF-8 · ${selected.content.includes('\r\n') ? 'CRLF' : 'LF'}`
-                  : 'CodeMirror 6 · 本地编辑'}
+                  ? `Ln ${cursor.line}, Col ${cursor.column} / UTF-8 / ${selected.content.includes('\r\n') ? 'CRLF' : 'LF'}`
+                  : '本地编辑'}
             </span>
-            <span>
-              {documents.filter(dirtyDocument).length} 个未保存（跨仓库） · 保存前自动备份 ·
-              不自动暂存
-            </span>
+            <span>{documents.filter(dirtyDocument).length} 个未保存</span>
           </footer>
         </section>
       </ResizableSplit>

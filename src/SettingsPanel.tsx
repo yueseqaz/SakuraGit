@@ -15,14 +15,11 @@ export function SettingsPanel({
 }) {
   return (
     <div className="settings-content">
-      <p className="modal-description">
-        把工作区调成你喜欢的样子。外观设置保存在本机，不修改任何 Git 配置。
-      </p>
       <h3>
         主题色 <span>PALETTE</span>
       </h3>
       <div className="palette-options">
-        {palettes.map(({ id, name, description }) => (
+        {palettes.map(({ id, name }) => (
           <button
             type="button"
             key={id}
@@ -47,13 +44,9 @@ export function SettingsPanel({
             <strong>
               {name} {value.palette === id && <Check size={15} />}
             </strong>
-            <small>{description}</small>
           </button>
         ))}
       </div>
-      <p className="theme-note">
-        4 款主题 × 浅色 / 深色 / 跟随系统 · 同步应用于工作台、Diff 与内置终端。
-      </p>
       <h3>
         外观 <span>APPEARANCE</span>
       </h3>
@@ -79,16 +72,14 @@ export function SettingsPanel({
         ))}
       </div>
       <div className="setting-size">
-        <label htmlFor="code-size">
-          Diff 字号 <small>只调整代码阅读区域</small>
-        </label>
+        <label htmlFor="code-size">代码字号</label>
         <select
           id="code-size"
           value={value.codeSize}
           disabled={saving}
           onChange={(e) => onChange({ ...value, codeSize: Number(e.target.value) })}
         >
-          {[11, 12, 13, 14, 15, 16].map((n) => (
+          {[12, 14].map((n) => (
             <option key={n} value={n}>
               {n} px
             </option>
@@ -97,17 +88,15 @@ export function SettingsPanel({
       </div>
       {onDevelopment && (
         <div className="setting-size">
-          <label>
-            开发环境与快捷启动 <small>检测 JDK / Go / PHP / Node，配置仓库命令</small>
-          </label>
+          <label>开发环境与快捷命令</label>
           <button className="button compact" onClick={onDevelopment}>
             配置开发环境
           </button>
         </div>
       )}
       <div className="settings-footnote">
-        {saving ? '正在保存…' : '自动保存 · 下次启动继续使用'}
-        <span>SakuraGit 0.8.0 / MyGo</span>
+        {saving ? '正在保存…' : '已自动保存'}
+        <span>SakuraGit 0.9.0 / MyGo</span>
       </div>
     </div>
   );

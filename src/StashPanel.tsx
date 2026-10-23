@@ -117,7 +117,7 @@ export function StashPanel({
                 <span>
                   <strong>{s.subject}</strong>
                   <small>
-                    {s.ref} · {new Date(s.date).toLocaleString('zh-CN')}
+                    {s.ref} / {new Date(s.date).toLocaleString('zh-CN')}
                   </small>
                 </span>
               </button>
@@ -207,7 +207,7 @@ export function StashPanel({
               <>
                 <p className="modal-description">{action.item.subject}</p>
                 <code className="target-path">
-                  {action.item.ref} · {action.item.hash.slice(0, 12)}
+                  {action.item.ref} / {action.item.hash.slice(0, 12)}
                 </code>
                 {action.kind === 'restore' ? (
                   <>

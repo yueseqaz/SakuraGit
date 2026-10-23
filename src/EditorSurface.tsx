@@ -30,7 +30,7 @@ const theme = EditorView.theme({
   '.cm-gutters': {
     backgroundColor: 'var(--canvas)',
     color: 'var(--muted)',
-    borderRight: '1px solid var(--line)',
+    borderRight: '0.5px solid var(--line)',
   },
   '.cm-activeLine, .cm-activeLineGutter': { backgroundColor: 'var(--surface)' },
   '.cm-selectionBackground, &.cm-focused .cm-selectionBackground, ::selection': {
@@ -42,10 +42,11 @@ const theme = EditorView.theme({
     color: 'var(--ink)',
     borderColor: 'var(--line)',
   },
-  '.cm-search input, .cm-search button': {
+  '.cm-search input, .cm-search button, .cm-search label': {
+    fontSize: '12px',
     background: 'var(--panel)',
     color: 'var(--ink)',
-    border: '1px solid var(--line)',
+    border: '0.5px solid var(--control-line)',
   },
   '&.cm-focused': { outline: 'none' },
 });

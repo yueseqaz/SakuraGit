@@ -159,3 +159,11 @@ Browser checks use explicitly labeled demo data, not access to local Git. Native
 - Live GitHub/GitLab authentication, credential dialogs or signed commits.
 - Real large production repositories and unusual non-UTF-8 filenames (synthetic 10k/2.5k fixtures are covered).
 - Apple Developer ID signing and notarization.
+
+## Visual Refinement (0.9.0)
+
+- The shared Radix package is pinned. CI checks native color data against the package, preventing drift between terminal chrome and web themes. Application-provided terminal true-color/256-color output is preserved rather than recolored.
+- Source contracts reject middle-dot product separators, component literal colors, nonstandard font sizes, thick web component borders and shadows. Browser contracts inspect visible text and primary-button WCAG AA contrast across all eight palette/mode combinations, plus editor/settings/development panels.
+- Existing integration, editor/draft, destructive-action, terminal lifecycle and native-smoke checks remain in place. Quick-command fixture tests now require an explicit Run click and verify exact saved command arguments; configuration load/save never executes commands.
+- Web borders are authored at 0.5 CSS px; device pixel ratios and WebView rasterization may snap hairlines. OS dialogs and MyGo-owned widget outlines use the framework/platform renderer, not CSS. Native PTY applications can render their own font zoom, ANSI and true colors.
+- Screenshot artifacts require visual inspection after CI. Automated layout checks do not establish full accessibility, IME or physical cross-platform QA.

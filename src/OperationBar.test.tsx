@@ -40,7 +40,7 @@ it('cancels the exact active operation and labels stage percentages honestly', a
   await act(async () => {
     render(<OperationBar busy="推送" hidden={false} />);
   });
-  expect(screen.getByText('当前阶段 42% · 非整体进度')).toBeTruthy();
+  expect(screen.getByText('当前阶段 42%')).toBeTruthy();
   await act(async () => {
     fireEvent.click(screen.getByText('取消当前操作'));
   });

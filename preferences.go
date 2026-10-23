@@ -49,7 +49,7 @@ func readPreferences(path string) Preferences {
 	}
 	var saved Preferences
 	if json.Unmarshal(data, &saved) == nil && validatePreferences(saved) == nil {
-		return saved
+		return normalizePreferences(saved)
 	}
 	return p
 }
@@ -65,6 +65,7 @@ func (g *Git) SavePreferences(p Preferences) error {
 	if err := validatePreferences(p); err != nil {
 		return err
 	}
+	p = normalizePreferences(p)
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	if !g.ephemeral {
@@ -81,6 +82,15 @@ func (g *Git) SavePreferences(p Preferences) error {
 	return nil
 }
 
+func normalizePreferences(p Preferences) Preferences {
+	if p.CodeSize <= 12 {
+		p.CodeSize = 12
+	} else {
+		p.CodeSize = 14
+	}
+	return p
+}
+
 func writePreferences(path string, p Preferences) error {
 	if err := validatePreferences(p); err != nil {
 		return err
@@ -88,7 +98,7 @@ func writePreferences(path string, p Preferences) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
 		return err
 	}
-	data, err := json.MarshalIndent(p, "", "  ")
+	data, err := json.MarshalIndent(normalizePreferences(p), "", "  ")
 	if err != nil {
 		return err
 	}

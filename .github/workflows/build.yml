@@ -42,6 +42,8 @@ jobs:
           node scripts/release-tools.mjs check-version
           node --test scripts/release-tools.node-test.mjs
       - run: npm ci
+      - name: Verify shared Radix color scales
+        run: node scripts/sync-radix.mjs --check
       - name: Generate IPC bindings from Go services
         run: npm run generate
       - name: Save generated IPC bindings
@@ -126,6 +128,8 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
+      - name: Verify shared Radix color scales
+        run: node scripts/sync-radix.mjs --check
       - name: Build native package on the GitHub runner
         env:
           PLATFORM: ${{ matrix.platform }}

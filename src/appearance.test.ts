@@ -5,7 +5,7 @@ describe('appearance persistence input', () => {
   it('accepts all four themes in each appearance mode', () => {
     for (const palette of palettes)
       for (const appearance of ['system', 'light', 'dark']) {
-        const p = { palette: palette.id, appearance, codeSize: 13 };
+        const p = { palette: palette.id, appearance, codeSize: 14 };
         expect(validatePreferences(p)).toEqual(p);
       }
   });
@@ -13,7 +13,7 @@ describe('appearance persistence input', () => {
     expect(validatePreferences({ palette: 'graphite', appearance: 'dark', codeSize: 16 })).toEqual({
       palette: 'graphite',
       appearance: 'dark',
-      codeSize: 16,
+      codeSize: 14,
     });
     for (const value of [
       null,
@@ -25,4 +25,14 @@ describe('appearance persistence input', () => {
       expect(validatePreferences(value)).toEqual(defaultPreferences);
     }
   });
+});
+
+it('migrates legacy sizes while preserving theme and appearance', () => {
+  for (const codeSize of [11, 12, 13, 14, 15, 16]) {
+    expect(validatePreferences({ palette: 'sand', appearance: 'dark', codeSize })).toEqual({
+      palette: 'sand',
+      appearance: 'dark',
+      codeSize: codeSize <= 12 ? 12 : 14,
+    });
+  }
 });

@@ -68,7 +68,7 @@ export function HistoryPanel({
     >
       <div className="panel-title">
         <span>
-          提交轨迹 <span className="muted-count">{commits.length}</span>
+          提交历史 <span className="muted-count">{commits.length}</span>
         </span>
         <button
           type="button"
@@ -82,9 +82,7 @@ export function HistoryPanel({
       </div>
       <div className="history-caption">
         <GitBranch size={13} />
-        {search
-          ? '全历史搜索 · 说明 / 作者 / 邮箱 / 提交 ID'
-          : '所有本地分支、远程分支与 HEAD · 滚动自动加载'}
+        {search ? '搜索全部提交' : '全部分支'}
       </div>
       <div className="commit-list" ref={windowed.ref}>
         {!!windowed.before && <div style={{ height: windowed.before }} aria-hidden="true" />}
@@ -127,7 +125,7 @@ export function HistoryPanel({
                     </span>
                     <b>{commit.author}</b>
                   </span>
-                  <span>·</span>
+
                   <time>{formatDate(commit.date)}</time>
                   <code>{commit.short}</code>
                 </span>
@@ -176,7 +174,7 @@ export function HistoryPanel({
             </div>
           ) : commits.length > 0 ? (
             <span>
-              已到{search ? '搜索结果' : '历史'}末尾 · 共 {commits.length} 条
+              已到{search ? '搜索结果' : '历史'}末尾 / 共 {commits.length} 条
             </span>
           ) : null}
         </div>

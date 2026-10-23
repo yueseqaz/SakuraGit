@@ -242,7 +242,7 @@ export function NewRepositoryDialog({
                   .map((name) => (
                     <option key={name} value={name}>
                       {name}
-                      {name === defaultBranch ? ' · 默认' : ''}
+                      {name === defaultBranch ? ' / 默认' : ''}
                     </option>
                   ))}
               </select>
@@ -323,7 +323,7 @@ export function NewRepositoryDialog({
             <p>{target}</p>
             <span>
               {branch || '远程默认分支'}
-              {singleBranch ? ' · 仅跟踪该分支' : ''}
+              {singleBranch ? ' / 仅跟踪该分支' : ''}
             </span>
           </div>
         )}
@@ -353,8 +353,8 @@ export function NewRepositoryDialog({
             />
             <p>
               {progress?.percent !== undefined && progress.percent >= 0
-                ? `当前阶段 ${progress.percent}% · 非整体进度`
-                : '等待 Git 返回阶段进度，不代表卡住或已完成'}
+                ? `当前阶段 ${progress.percent}%`
+                : '等待 Git 返回进度'}
             </p>
             {progress?.detail && <pre>{redactGitError(progress.detail)}</pre>}
             {submitting && (
