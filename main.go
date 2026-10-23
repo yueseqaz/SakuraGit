@@ -197,7 +197,7 @@ func main() {
 		log.Fatal("--smoke requires --repo")
 	}
 	mygo.App.SetName("SakuraGit")
-	mygo.App.SetVersion("0.10.1")
+	mygo.App.SetVersion("0.10.2")
 	// Keep the pre-rename data location so existing sessions and drafts survive.
 	if dir, err := mygo.App.Path(mygo.PathAppData); err == nil {
 		mygo.App.SetPath(mygo.PathUserData, filepath.Join(dir, "Gitlane"))

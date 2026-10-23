@@ -60,6 +60,24 @@ func output(ctx context.Context, dir string, env []string, command []string, lim
 	err := cmd.Run()
 	return append([]byte(nil), w.b.Bytes()...), err
 }
+
+func terminalEnvironment(base []string) []string {
+	result := append([]string(nil), base...)
+	set := func(key, value string) {
+		for i, entry := range result {
+			if strings.HasPrefix(entry, key+"=") {
+				result[i] = key + "=" + value
+				return
+			}
+		}
+		result = append(result, key+"="+value)
+	}
+	// Environment probing starts a login shell too. Finder/Codex launches may
+	// inherit TERM=dumb, which makes Starship print an error before detection.
+	set("TERM", "xterm-256color")
+	set("COLORTERM", "truecolor")
+	return result
+}
 func Shell() (string, error) {
 	if runtime.GOOS == "windows" {
 		for _, name := range []string{"pwsh.exe", "powershell.exe"} {
@@ -127,7 +145,7 @@ func Detect(ctx context.Context) Environment {
 			}
 		} else {
 			marker := rand.Text()
-			data, err = output(probeCtx, home, os.Environ(), []string{shell, "-l", "-i", "-c", loginEnvironmentScript(marker)}, 256<<10)
+			data, err = output(probeCtx, home, terminalEnvironment(os.Environ()), []string{shell, "-l", "-i", "-c", loginEnvironmentScript(marker)}, 256<<10)
 			start := bytes.Index(data, []byte("\x00"+marker+"\x00"))
 			if err == nil && start >= 0 {
 				values = ParseEnvironment(data[start+len(marker)+2:])
