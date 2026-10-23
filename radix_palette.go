@@ -20,12 +20,16 @@ var radixScales = func() map[string][2][12]string {
 	return scales
 }()
 
-func radixColor(name string, step int, dark bool) ui.Color {
+func radixHex(name string, step int, dark bool) string {
 	mode := 0
 	if dark {
 		mode = 1
 	}
-	return ui.Hex(radixScales[name][mode][step-1])
+	return radixScales[name][mode][step-1]
+}
+
+func radixColor(name string, step int, dark bool) ui.Color {
+	return ui.Hex(radixHex(name, step, dark))
 }
 
 func paletteScales(palette string) (string, string) {

@@ -152,6 +152,40 @@ try {
               'Git.Open': snapshot,
               'Git.Snapshot': snapshot,
               'Git.Diff': patch,
+              'Git.StashDiff': patch,
+              'Git.CommitFileDiff': patch,
+              'Git.CommitDetails': {
+                commit: snapshot.commits[0],
+                body: 'UI fixture commit',
+                committer: snapshot.commits[0].author,
+                committerEmail: snapshot.commits[0].authorEmail,
+                committedAt: snapshot.commits[0].date,
+                files: [
+                  {
+                    path: patch.path,
+                    oldPath: '',
+                    status: 'M',
+                    additions: 1,
+                    deletions: 1,
+                    binary: false,
+                  },
+                ],
+              },
+              'Git.Remotes': [
+                {
+                  name: 'origin',
+                  fetchURLs: ['https://example.invalid/fixture.git'],
+                  pushURLs: ['https://example.invalid/fixture.git'],
+                  revision: 'fixture-remote',
+                },
+              ],
+              'Git.Diagnostics': {
+                version: 'git version UI fixture',
+                name: 'Fixture Author',
+                email: 'fixture@example.invalid',
+                credentialHelper: true,
+                customSSH: false,
+              },
               'Git.Conflict': conflict,
               'Git.OperationStatus': {
                 id: '',
@@ -178,7 +212,11 @@ try {
               throw new Error('Binary fixture is not editable text');
             if (method === 'Git.RunDeveloperCommand' || method === 'Git.SaveDeveloperConfig')
               return;
-            if (method === 'Git.SaveConflict' || method === 'Git.StageLines')
+            if (
+              method === 'Git.SaveConflict' ||
+              method === 'Git.StageLines' ||
+              method === 'Git.Sync'
+            )
               return { output: 'fixture only' };
             if (method === 'Git.SaveEditorFile') {
               editorFile = { path: args[1], content: args[3], revision: 'b'.repeat(64) };
@@ -296,6 +334,19 @@ try {
       ]);
       await page.getByRole('button', { name: '查看 Diff', exact: true }).click();
       if (palette === 'mist' && mode === 'light') {
+        await page.getByRole('button', { name: 'Fetch', exact: true }).click();
+        await page.waitForFunction(() =>
+          window.__fixtureCalls.some((c) => c.method === 'Git.Sync'),
+        );
+        assert.equal(
+          await page.getByRole('dialog').count(),
+          0,
+          'Fetch does not require a redundant confirmation',
+        );
+        const fetchCall = await page.evaluate(() =>
+          window.__fixtureCalls.find((c) => c.method === 'Git.Sync'),
+        );
+        assert.deepEqual(fetchCall.args, [demoSnapshot.root, 'fetch', '', '', '']);
         await page.getByLabel('选择新第 2 行新增').check();
         await page.getByRole('button', { name: '暂存所选行', exact: true }).click();
         await page.waitForFunction(() =>
@@ -314,6 +365,31 @@ try {
       assert.deepEqual(failures, []);
       await page.close();
     }
+  for (const mode of ['light', 'dark']) {
+    const { page, failures } = await fixture('mist', mode);
+    for (const [label, selector, filename] of [
+      ['提交历史', '.history-workbench', 'history'],
+      ['Stash', '.stash-workbench', 'stash'],
+      ['仓库连接', '.remote-settings-panel', 'remotes'],
+      ['开发工具', '.workflow-panel', 'workflow'],
+      ['撤销与恢复', '.recovery-panel', 'recovery'],
+      ['工作树', '.worktree-grid', 'worktrees'],
+    ]) {
+      await page.getByRole('button', { name: label, exact: true }).click();
+      await page.locator(selector).waitFor();
+      if (filename === 'history') {
+        await page.locator('.commit-row').first().click();
+        await page.locator('.commit-summary h2').waitFor();
+      }
+      if (filename === 'remotes')
+        await page.getByText('git version UI fixture', { exact: true }).waitFor();
+      await checkDesign(page);
+      await page.screenshot({ path: `${output}/${filename}-${mode}.png` });
+    }
+    assert.deepEqual(failures, []);
+    assert.equal(await page.getByRole('alert').count(), 0);
+    await page.close();
+  }
   for (const mode of ['light', 'dark']) {
     const { page, failures } = await fixture('mist', mode);
     await page.getByRole('button', { name: '代码编辑器', exact: true }).click();
@@ -416,7 +492,7 @@ try {
     await page.close();
   }
   console.log(
-    'Workbench UI fixture contracts and 22 visual snapshots passed. Native PTYs are tested separately.',
+    'Workbench UI fixture contracts and visual snapshots passed. Native PTYs are tested separately.',
   );
 } finally {
   await browser?.close();

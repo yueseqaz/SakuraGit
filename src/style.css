@@ -1171,7 +1171,7 @@ h1 {
   height: 65px;
   border-radius: 4px;
   border: 0.5px solid var(--green-soft);
-  background: radial-gradient(ellipse at 30% 20%, var(--surface), var(--surface));
+  background: var(--surface);
   margin-bottom: 20px;
 }
 .empty-state strong {
@@ -1338,7 +1338,7 @@ h1 {
 }
 .worktree-card.active {
   border-color: var(--muted);
-  background: linear-gradient(130deg, var(--surface), var(--canvas));
+  background: var(--panel);
 }
 .worktree-card-top {
   display: flex;
@@ -2797,7 +2797,7 @@ select.modal-input {
   padding: 20px;
   border: 0.5px solid var(--line);
   border-radius: 4px;
-  background: linear-gradient(130deg, var(--canvas), var(--panel));
+  background: var(--panel);
 }
 .remote-card-title,
 .remote-card-title > span {

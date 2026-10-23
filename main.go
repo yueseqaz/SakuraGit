@@ -221,10 +221,8 @@ func main() {
 		}
 		mygo.Theme.SetSource(mygo.ThemeSource(prefs.Appearance))
 		mygo.App.SetMenu(mygo.NewMenu(applicationMenu(service)))
-		background := "#f3f6f8"
-		if mygo.Theme.IsDark() {
-			background = "#17212a"
-		}
+		neutral, _ := paletteScales(prefs.Palette)
+		background := radixHex(neutral, 1, mygo.Theme.IsDark())
 		stateKey := "main"
 		if *smoke {
 			stateKey = ""

@@ -238,3 +238,40 @@ small {
   font-family: inherit;
   letter-spacing: 0;
 }
+
+.editor-surface .cm-editor .cm-completionIcon,
+.editor-surface .cm-editor .cm-completionDetail,
+.editor-surface .cm-editor .cm-foldGutter {
+  font-size: 12px;
+}
+
+.history-panel {
+  container-type: inline-size;
+}
+.commit-info {
+  gap: 4px;
+  padding-block: 6px;
+}
+.commit-info > strong {
+  font-size: 14px;
+  color: var(--ink);
+}
+.commit-author {
+  min-width: 0;
+}
+.commit-author b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.commit-meta time {
+  flex-shrink: 0;
+}
+@container (max-width: 460px) {
+  .commit-meta code {
+    display: none;
+  }
+  .commit-author {
+    flex: 1;
+  }
+}

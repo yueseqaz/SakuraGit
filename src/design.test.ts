@@ -21,7 +21,7 @@ describe('workbench design constraints', () => {
         }
       }
       for (const border of css.matchAll(
-        /\bborder(?:-(?:top|right|bottom|left))?(?:-width)?\s*:\s*([\d.]+)px/g,
+        /\bborder(?:-(?:top|right|bottom|left|block(?:-start|-end)?|inline(?:-start|-end)?))?(?:-width)?\s*:\s*([\d.]+)px/g,
       )) {
         expect(Number(border[1]), `${name}: ${border[0]}`).toBe(0.5);
       }

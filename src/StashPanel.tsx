@@ -104,7 +104,7 @@ export function StashPanel({
               创建 Stash
             </button>
           </div>
-          <p className="panel-intro">任务切换前，给未完成的工作留一个位置。恢复默认保留原记录。</p>
+
           <div className="stash-items">
             {snapshot.stashes.map((s) => (
               <button
@@ -125,7 +125,7 @@ export function StashPanel({
             {!snapshot.stashes.length && (
               <div className="empty-state">
                 <Archive size={28} />
-                <strong>还没有Stash</strong>
+                <strong>暂无 Stash</strong>
                 <p>工作区有修改时，可以先保存，再切换分支。</p>
               </div>
             )}

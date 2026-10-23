@@ -966,7 +966,13 @@ export default function App() {
                   className="button"
                   disabled={!!busy || !snapshot.remotes.length}
                   title="只更新远程引用，不改动工作区"
-                  onClick={() => openModal({ kind: 'sync', action: 'fetch' })}
+                  onClick={() =>
+                    void mutate(
+                      '获取远程更新',
+                      (root) => Git.sync(root, 'fetch', '', '', ''),
+                      '远程状态已更新',
+                    )
+                  }
                 >
                   <RefreshCw size={15} /> Fetch
                 </button>
@@ -1791,14 +1797,7 @@ export default function App() {
                       : '获取后，待推送与待拉取数量会按最新远程状态更新。'}
                 </p>
                 <CommandDetails command={syncCommand(modal.action, modal.plan)} />
-                <div className="safety-callout">
-                  <ShieldCheck size={18} />
-                  <span>
-                    {modal.action === 'push'
-                      ? '这会更新远程仓库，其他协作者可见。'
-                      : '不自动改写提交历史，不执行强制操作。'}
-                  </span>
-                </div>
+
                 <div className="modal-buttons">
                   <button className="button" type="button" onClick={() => setModal(null)}>
                     取消
