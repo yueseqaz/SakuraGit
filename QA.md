@@ -167,3 +167,9 @@ Browser checks use explicitly labeled demo data, not access to local Git. Native
 - Existing integration, editor/draft, destructive-action, terminal lifecycle and native-smoke checks remain in place. Quick-command fixture tests now require an explicit Run click and verify exact saved command arguments; configuration load/save never executes commands.
 - Web borders are authored at 0.5 CSS px; device pixel ratios and WebView rasterization may snap hairlines. OS dialogs and MyGo-owned widget outlines use the framework/platform renderer, not CSS. Native PTY applications can render their own font zoom, ANSI and true colors.
 - Screenshot artifacts require visual inspection after CI. Automated layout checks do not establish full accessibility, IME or physical cross-platform QA.
+
+### Verified Cloud Evidence
+
+UI source commit `b09ab3f08b9261c5d6c6cc344d7b7f04b98b9387` passed CI run `39949358967`: 112 frontend tests in 28 files, race tests/vet on all three operating systems, five native package targets and the real Linux WebView smoke. All 43 browser screenshots were generated on GitHub; workspace, editor, settings, compact environment rows, narrow layout and 426-commit pagination screenshots were visually inspected.
+
+The native smoke initially exposed a history-scroll regression after adding CSS size containment. Size containment is removed from the history pane; both browser fixtures and real native smoke verify automatic loading through 426 commits with fewer than 40 rendered rows. The smoke's checks were not relaxed, and failure diagnostics now include history scroll geometry.
