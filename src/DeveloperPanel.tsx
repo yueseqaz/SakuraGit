@@ -300,18 +300,20 @@ export function DeveloperPanel({
             <button
               className="button compact"
               disabled={detecting || working}
+              title="重新读取登录 Shell 或系统环境；登录 Shell 会执行其启动配置"
               onClick={() => void refresh(true)}
             >
               <RefreshCw size={13} className={detecting ? 'spin' : ''} />
               {detecting ? '正在检测…' : '重新读取环境'}
             </button>
           </div>
-          <p className="theme-note">macOS / Linux 读取登录 Shell，Windows 读取系统环境。</p>
+
           {environment?.warning && <p className="developer-warning">{environment.warning}</p>}
           {environment && (
             <>
-              <p className="theme-note">
-                来源：{environment.source} / {environment.shell}
+              <p className="developer-source">
+                <span>{environment.source}</span>
+                <code>{environment.shell}</code>
               </p>
               <div className="developer-tools">
                 {environment.tools.map((tool) => (

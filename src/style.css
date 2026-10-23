@@ -460,7 +460,7 @@ svg {
   width: 242px;
   height: 30px;
   padding: 0 8px;
-  border: 0.5px solid var(--green-soft);
+  border: 0.5px solid var(--line);
   border-radius: 4px;
   color: var(--ink-secondary);
   background: var(--surface);
@@ -495,7 +495,7 @@ kbd {
   font-weight: 400;
 }
 .search-box kbd {
-  border: 0.5px solid var(--green-soft);
+  border: 0.5px solid var(--line);
   border-radius: 3px;
   font-size: 12px;
   padding: 1px 4px;
@@ -562,7 +562,7 @@ h1 {
   min-height: 34px;
   padding: 7px 12px;
   background: var(--panel);
-  border: 0.5px solid var(--green-soft);
+  border: 0.5px solid var(--line);
   border-radius: 4px;
   font-size: 14px;
   font-weight: 500;
@@ -575,7 +575,7 @@ h1 {
 }
 .button.primary {
   background: var(--green);
-  border-color: var(--green);
+  border-color: var(--accent-border);
   color: var(--surface);
   box-shadow: none;
 }
@@ -599,7 +599,7 @@ h1 {
   justify-content: space-between;
   gap: 18px;
   padding: 12px 15px;
-  border: 0.5px solid var(--green-soft);
+  border: 0.5px solid var(--line);
   border-radius: 4px 4px 0 0;
   background: var(--surface);
   flex-shrink: 0;
@@ -693,7 +693,7 @@ h1 {
   gap: 12px;
   height: 46px;
   padding: 0 16px;
-  border-bottom: 0.5px solid var(--surface);
+  border-bottom: 0.5px solid var(--line);
   flex-shrink: 0;
   font-size: 14px;
   color: var(--green);
@@ -763,7 +763,7 @@ h1 {
 }
 .file-row.selected {
   background: var(--surface);
-  border-color: var(--green-soft);
+  border-color: var(--line);
 }
 .file-select {
   display: flex;
@@ -878,7 +878,7 @@ h1 {
   font-size: 12px;
   color: var(--green);
   background: var(--panel);
-  border: 0.5px solid var(--green-soft);
+  border: 0.5px solid var(--line);
   border-radius: 4px;
   padding: 10px 11px;
   outline-offset: 0;
@@ -932,7 +932,7 @@ h1 {
 }
 .clean-workspace > span {
   color: var(--green);
-  border: 0.5px solid var(--green-soft);
+  border: 0.5px solid var(--line);
   background: var(--surface);
   border-radius: 50%;
   width: 45px;
@@ -967,7 +967,7 @@ h1 {
   align-items: stretch;
   justify-content: space-between;
   padding-right: 17px;
-  border-bottom: 0.5px solid var(--green-soft);
+  border-bottom: 0.5px solid var(--line);
   background: var(--canvas);
   gap: 10px;
 }
@@ -978,7 +978,7 @@ h1 {
   gap: 8px;
   color: var(--green);
   font-size: 12px;
-  border-right: 0.5px solid var(--green-soft);
+  border-right: 0.5px solid var(--line);
   border-bottom: 0.5px solid var(--ink-secondary);
   background: var(--panel);
   min-width: 0;
@@ -1009,7 +1009,7 @@ h1 {
   height: 46px;
   padding: 0 15px;
   flex-shrink: 0;
-  border-bottom: 0.5px solid var(--surface);
+  border-bottom: 0.5px solid var(--line);
 }
 .diff-path {
   font: 12px var(--mono);
@@ -1042,7 +1042,7 @@ h1 {
   min-height: 26px;
   padding: 4px 7px;
   background: var(--canvas);
-  border-color: var(--green-soft);
+  border-color: var(--line);
   color: var(--ink-secondary);
 }
 .diff-scroll {
@@ -1076,7 +1076,7 @@ h1 {
   user-select: none;
 }
 .line-number:nth-child(2) {
-  border-right: 0.5px solid var(--surface);
+  border-right: 0.5px solid var(--line);
 }
 .line-symbol {
   width: 27px;
@@ -1130,7 +1130,7 @@ h1 {
   gap: 9px;
   height: 29px;
   padding: 0 13px;
-  border-top: 0.5px solid var(--green-soft);
+  border-top: 0.5px solid var(--line);
   background: var(--canvas);
   flex-shrink: 0;
   font-size: 12px;
@@ -1170,7 +1170,7 @@ h1 {
   width: 65px;
   height: 65px;
   border-radius: 4px;
-  border: 0.5px solid var(--green-soft);
+  border: 0.5px solid var(--line);
   background: var(--surface);
   margin-bottom: 20px;
 }
@@ -1204,7 +1204,7 @@ h1 {
   gap: 6px;
   height: 37px;
   padding: 0 16px;
-  border-bottom: 0.5px solid var(--surface);
+  border-bottom: 0.5px solid var(--line);
   color: var(--ink-secondary);
   font-size: 12px;
   flex-shrink: 0;
@@ -1224,7 +1224,7 @@ h1 {
   border: 0;
   text-align: left;
   padding: 0 14px 0 0;
-  border-bottom: 0.5px solid var(--surface);
+  border-bottom: 0.5px solid var(--line);
   background: transparent;
 }
 .commit-row:hover {
@@ -1331,7 +1331,7 @@ h1 {
   padding: 0 24px 24px;
 }
 .worktree-card {
-  border: 0.5px solid var(--green-soft);
+  border: 0.5px solid var(--line);
   border-radius: 4px;
   padding: 20px;
   background: var(--canvas);
@@ -1350,7 +1350,7 @@ h1 {
   height: 48px;
   color: var(--ink-secondary);
   background: var(--surface);
-  border: 0.5px solid var(--green-soft);
+  border: 0.5px solid var(--line);
   border-radius: 4px;
   display: grid;
   place-items: center;
@@ -1419,7 +1419,7 @@ h1 {
   transform: rotate(28deg);
   width: 190px;
   height: 57px;
-  border-color: var(--green-soft);
+  border-color: var(--line);
 }
 .art-node {
   position: absolute;
@@ -1491,7 +1491,7 @@ h1 {
   padding: 11px 0;
   border: 0;
   background: transparent;
-  border-bottom: 0.5px solid var(--green-soft);
+  border-bottom: 0.5px solid var(--line);
   color: var(--ink-secondary);
   text-align: left;
 }
@@ -1527,7 +1527,7 @@ h1 {
   justify-content: space-between;
   gap: 20px;
   padding: 0 18px;
-  border-top: 0.5px solid var(--green-soft);
+  border-top: 0.5px solid var(--line);
   background: var(--surface);
   font-size: 12px;
   color: var(--ink-secondary);
@@ -1616,7 +1616,7 @@ h1 {
   overflow: auto;
   position: relative;
   background: var(--canvas);
-  border: 0.5px solid var(--green-soft);
+  border: 0.5px solid var(--line);
   border-radius: 4px;
   padding: 34px;
   box-shadow: none;
@@ -1700,7 +1700,7 @@ h1 {
   padding: 15px;
   color: var(--ink-secondary);
   background: var(--surface);
-  border: 0.5px solid var(--green-soft);
+  border: 0.5px solid var(--line);
   border-radius: 4px;
   margin-top: 19px;
 }
@@ -1754,13 +1754,13 @@ h1 {
   flex-wrap: wrap;
   font-size: 12px;
   color: var(--ink-secondary);
-  border-top: 0.5px solid var(--green-soft);
+  border-top: 0.5px solid var(--line);
   padding-top: 16px;
 }
 .guide-shortcuts kbd {
   padding: 3px 5px;
   font-size: 12px;
-  border: 0.5px solid var(--green-soft);
+  border: 0.5px solid var(--line);
   border-radius: 3px;
   background: var(--surface);
 }
@@ -2261,7 +2261,7 @@ select {
   padding: 13px;
 }
 .palette-card.chosen {
-  border-color: var(--green);
+  border-color: var(--accent-border);
   box-shadow: none;
 }
 .palette-card strong {
@@ -2312,7 +2312,7 @@ select {
   justify-content: center;
 }
 .appearance-options .selected {
-  border-color: var(--green);
+  border-color: var(--accent-border);
   color: var(--green);
   background: var(--green-soft);
 }
@@ -2777,7 +2777,7 @@ select.modal-input {
 }
 .hunk-action:hover {
   background: var(--green-soft);
-  border-color: var(--green);
+  border-color: var(--accent-border);
 }
 .diff-line.hunk {
   gap: 0;
@@ -2992,7 +2992,7 @@ select.modal-input {
 .clone-progress {
   margin-top: 16px;
   padding: 14px;
-  border: 0.5px solid var(--green-soft);
+  border: 0.5px solid var(--line);
   border-radius: 4px;
   background: var(--surface);
   overflow-wrap: anywhere;
@@ -3049,7 +3049,7 @@ select.modal-input {
 .workflow-card {
   margin: 16px 24px;
   padding: 20px;
-  border: 0.5px solid var(--green-soft);
+  border: 0.5px solid var(--line);
   border-radius: 4px;
   background: var(--canvas);
 }
@@ -3075,7 +3075,7 @@ select.modal-input {
 }
 .workflow-file {
   padding: 14px 0;
-  border-top: 0.5px solid var(--green-soft);
+  border-top: 0.5px solid var(--line);
 }
 .workflow-file code {
   display: block;
@@ -3125,7 +3125,7 @@ select.modal-input {
   width: min(420px, calc(100vw - 32px));
   background: var(--canvas);
   padding: 18px;
-  border: 0.5px solid var(--green-soft);
+  border: 0.5px solid var(--line);
   border-radius: 4px;
   box-shadow: none;
   font-size: 12px;

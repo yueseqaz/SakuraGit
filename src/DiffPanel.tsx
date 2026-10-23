@@ -369,9 +369,7 @@ export function DiffPanel({
       </div>
       {onLines && !!diff?.hunks.length && (
         <div className="line-selection-toolbar">
-          <span>
-            {selectedLines.length ? `已选 ${selectedLines.length} 行` : '勾选变更行，拆分一次提交'}
-          </span>
+          <span>{selectedLines.length ? `已选 ${selectedLines.length} 行` : '未选择行'}</span>
           <button
             className="button compact"
             disabled={disabled || loading || !selectedLines.length}
@@ -469,22 +467,12 @@ export function DiffPanel({
           </div>
         )}
       </div>
-      <div className="diff-footer">
-        <span>
-          {file
-            ? onHunk
-              ? '代码块仅更新暂存区，不改动文件'
-              : '暂存操作不改动工作区文件'
-            : '只读对比，不修改文件'}
-        </span>
-        <span>
-          {focused
-            ? 'Esc 退出专注'
-            : highlightMode === 'plain'
-              ? '纯文本 / 高亮准备中或已降级'
-              : '语法 / 行内高亮 / UTF-8'}
-        </span>
-      </div>
+      {hasCode && (focused || highlightMode === 'plain') && (
+        <div className="diff-footer">
+          <span>{focused ? 'Esc 退出专注阅读' : ''}</span>
+          <span>{highlightMode === 'plain' ? '纯文本' : ''}</span>
+        </div>
+      )}
     </section>
   );
   return focused ? (

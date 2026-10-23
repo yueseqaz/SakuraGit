@@ -18,7 +18,7 @@
 }
 .developer-command-actions .button.primary {
   background: var(--green);
-  border-color: var(--green);
+  border-color: var(--accent-border);
   color: var(--on-accent);
 }
 .developer-command-actions .button.primary:disabled {

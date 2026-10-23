@@ -152,7 +152,24 @@ textarea {
   letter-spacing: 0;
 }
 .developer-panel .developer-tools {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  border-top: 0.5px solid var(--line);
+}
+.developer-panel .developer-tools article {
+  display: grid;
+  grid-template-columns: 84px minmax(100px, 1fr) minmax(0, 2fr);
+  align-items: baseline;
+  gap: 12px;
+  padding: 8px 0;
+  border: 0;
+  border-bottom: 0.5px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+}
+.developer-panel .developer-tools strong {
+  color: var(--ink);
 }
 .developer-panel .developer-command-actions {
   align-self: flex-start;
@@ -213,8 +230,12 @@ textarea {
   .modal {
     padding: 20px;
   }
-  .developer-panel .developer-tools {
-    grid-template-columns: minmax(0, 1fr);
+  .developer-panel .developer-tools article {
+    grid-template-columns: 72px minmax(0, 1fr);
+    gap: 4px 12px;
+  }
+  .developer-panel .developer-tools code {
+    grid-column: 2;
   }
   .statusbar > :nth-child(n + 3) {
     display: none;
@@ -274,4 +295,13 @@ small {
   .commit-author {
     flex: 1;
   }
+}
+
+.developer-source {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  color: var(--muted);
+  font-size: 12px;
 }

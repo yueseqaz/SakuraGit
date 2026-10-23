@@ -739,8 +739,6 @@ export default function App() {
       <header className="titlebar">
         <div className="titlebar-label">
           <Mark small /> <span>SakuraGit</span>
-          <span className="titlebar-divider" />{' '}
-          <span className="titlebar-caption">A clearer path for your code.</span>
         </div>
         <div className="titlebar-right">
           {!native && <span className="preview-badge">浏览器预览 / 示例数据</span>}

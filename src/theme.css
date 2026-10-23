@@ -22,7 +22,7 @@
 @import '@radix-ui/colors/ruby-dark.css';
 @import '@radix-ui/colors/black-alpha.css';
 
-/* Radix: 1–2 surfaces, 3–5 interaction, 6–8 borders, 11–12 readable text.
+/* Radix: 1-2 surfaces, 3-5 interaction, 6-8 borders, 11-12 readable text.
    Light solid buttons use step 11 for contrast with small white labels. */
 :root {
   color-scheme: light;
