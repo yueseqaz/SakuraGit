@@ -145,8 +145,8 @@ export function HistoryPanel({
         ) : !loading && !error ? (
           <EmptyState
             icon={<GitCommitHorizontal size={27} />}
-            title={search ? '没有匹配的提交' : '故事正要开始'}
-            text={search ? '未找到匹配的提交' : '暂无提交'}
+            title={search ? '未找到匹配的提交' : '暂无提交'}
+            text=""
           />
         ) : null}
         {!!windowed.after && <div style={{ height: windowed.after }} aria-hidden="true" />}
@@ -186,7 +186,7 @@ function EmptyState({ icon, title, text }: { icon: ReactNode; title: string; tex
     <div className="empty-state">
       <span className="empty-icon">{icon}</span>
       <strong>{title}</strong>
-      <p>{text}</p>
+      {text && <p>{text}</p>}
     </div>
   );
 }

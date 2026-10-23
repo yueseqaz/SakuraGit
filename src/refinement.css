@@ -266,9 +266,6 @@ small {
   font-size: 12px;
 }
 
-.history-panel {
-  container-type: inline-size;
-}
 .commit-info {
   gap: 4px;
   padding-block: 6px;
@@ -288,7 +285,7 @@ small {
 .commit-meta time {
   flex-shrink: 0;
 }
-@container (max-width: 460px) {
+@media (max-width: 1200px) {
   .commit-meta code {
     display: none;
   }

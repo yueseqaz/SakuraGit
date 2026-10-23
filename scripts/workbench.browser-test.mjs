@@ -52,6 +52,7 @@ try {
     appearance,
     merge = false,
     viewport = { width: 1440, height: 920 },
+    historyCount = 0,
   ) {
     const page = await browser.newPage({ viewport, deviceScaleFactor: 1, reducedMotion: 'reduce' });
     const failures = [];
@@ -70,8 +71,22 @@ try {
         },
       ],
     };
+    const history = historyCount
+      ? Array.from({ length: historyCount }, (_, index) => ({
+          ...snapshot.commits[0],
+          hash: (index + 1000).toString(16).padStart(40, '0'),
+          short: (index + 1000).toString(16).padStart(7, '0'),
+          parents: index + 1 < historyCount ? [(index + 1001).toString(16).padStart(40, '0')] : [],
+          subject: `Pagination fixture ${index + 1}`,
+          refs: '',
+        }))
+      : snapshot.commits;
+    if (historyCount) {
+      snapshot.commits = history.slice(0, 100);
+      snapshot.historyHasMore = true;
+    }
     await page.addInitScript(
-      ({ snapshot, patch, conflict, palette, appearance }) => {
+      ({ snapshot, patch, conflict, palette, appearance, history }) => {
         window.__SAKURAGIT_EMBEDDED__ = true;
         window.__fixtureCalls = [];
         const listeners = {};
@@ -152,6 +167,12 @@ try {
               'Git.Open': snapshot,
               'Git.Snapshot': snapshot,
               'Git.Diff': patch,
+              'Git.History': {
+                commits: history.slice(args[3], args[3] + 100),
+                hasMore: args[3] + 100 < history.length,
+                nextOffset: Math.min(history.length, args[3] + 100),
+                revision: snapshot.historyRevision,
+              },
               'Git.StashDiff': patch,
               'Git.CommitFileDiff': patch,
               'Git.CommitDetails': {
@@ -235,7 +256,7 @@ try {
           },
         };
       },
-      { snapshot, patch, conflict, palette, appearance },
+      { snapshot, patch, conflict, palette, appearance, history },
     );
     await page.goto('http://127.0.0.1:5275');
     await page.getByLabel(merge ? '三方合并编辑器' : '差异详情').waitFor();
@@ -365,6 +386,37 @@ try {
       assert.deepEqual(failures, []);
       await page.close();
     }
+  for (const mode of ['light', 'dark']) {
+    const { page, failures } = await fixture(
+      'mist',
+      mode,
+      false,
+      { width: 1000, height: 620 },
+      426,
+    );
+    await page.getByRole('button', { name: '提交历史', exact: true }).click();
+    const list = page.locator('.commit-list');
+    for (const expected of [200, 300, 400, 426]) {
+      await list.evaluate((element) => {
+        element.scrollTop = element.scrollHeight;
+        element.dispatchEvent(new Event('scroll'));
+      });
+      await page.waitForFunction(
+        (count) => Number(document.querySelector('.history-panel').dataset.loadedCount) >= count,
+        expected,
+      );
+    }
+    await list.evaluate((element) => {
+      element.scrollTop = element.scrollHeight;
+      element.dispatchEvent(new Event('scroll'));
+    });
+    await page.getByText('Pagination fixture 426', { exact: true }).waitFor();
+    assert.ok((await page.locator('.commit-row').count()) < 40, 'older history stays virtualized');
+    await checkDesign(page);
+    await page.screenshot({ path: `${output}/history-paginated-${mode}.png` });
+    assert.deepEqual(failures, []);
+    await page.close();
+  }
   for (const mode of ['light', 'dark']) {
     const { page, failures } = await fixture('mist', mode);
     for (const [label, selector, filename] of [
