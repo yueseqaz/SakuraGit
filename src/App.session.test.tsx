@@ -167,17 +167,17 @@ it('collapses navigation without changing the selected commit and restores both 
   });
   const view = render(<App />);
   await waitFor(() => expect(screen.getByTestId('selected-commit').textContent).toBe(saved.hash));
-  fireEvent.click(screen.getByRole('button', { name: '收起侧栏', exact: true }));
+  fireEvent.click(screen.getByRole('button', { name: '收起侧栏' }));
   expect(view.container.querySelector('.sidebar')!.hasAttribute('hidden')).toBe(true);
   expect(screen.queryByRole('navigation', { name: '主导航' })).toBeNull();
   expect(screen.queryByRole('separator', { name: '调整导航栏宽度' })).toBeNull();
   expect(screen.getByTestId('selected-commit').textContent).toBe(saved.hash);
-  fireEvent.click(screen.getByRole('button', { name: '展开提交列表', exact: true }));
+  fireEvent.click(screen.getByRole('button', { name: '展开提交列表' }));
   expect(
     view.container.querySelector('.history-workbench')!.classList.contains('history-list-expanded'),
   ).toBe(true);
-  fireEvent.click(screen.getByRole('button', { name: '恢复分栏视图', exact: true }));
-  fireEvent.click(screen.getByRole('button', { name: '展开侧栏', exact: true }));
+  fireEvent.click(screen.getByRole('button', { name: '恢复分栏视图' }));
+  fireEvent.click(screen.getByRole('button', { name: '展开侧栏' }));
   expect(screen.getByRole('navigation', { name: '主导航' })).toBeTruthy();
   expect(screen.getByRole('separator', { name: '调整导航栏宽度' })).toBeTruthy();
   expect(screen.getByTestId('selected-commit').textContent).toBe(saved.hash);
@@ -194,9 +194,9 @@ it('toggles the sidebar by keyboard without stealing text editing shortcuts', as
   render(<App />);
   const input = await screen.findByLabelText('提交说明');
   fireEvent.keyDown(input, { key: 'b', ctrlKey: true });
-  expect(screen.getByRole('button', { name: '收起侧栏', exact: true })).toBeTruthy();
+  expect(screen.getByRole('button', { name: '收起侧栏' })).toBeTruthy();
   fireEvent.keyDown(window, { key: 'b', ctrlKey: true });
-  expect(screen.getByRole('button', { name: '展开侧栏', exact: true })).toBeTruthy();
+  expect(screen.getByRole('button', { name: '展开侧栏' })).toBeTruthy();
   fireEvent.keyDown(window, { key: 'b', metaKey: true });
-  expect(screen.getByRole('button', { name: '收起侧栏', exact: true })).toBeTruthy();
+  expect(screen.getByRole('button', { name: '收起侧栏' })).toBeTruthy();
 });
