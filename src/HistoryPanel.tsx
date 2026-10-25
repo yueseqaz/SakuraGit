@@ -5,6 +5,8 @@ import {
   GitBranch,
   GitCommitHorizontal,
   LoaderCircle,
+  Maximize2,
+  Minimize2,
   RefreshCw,
 } from 'lucide-react';
 import type { Commit } from './mygo';
@@ -31,6 +33,8 @@ export function HistoryPanel({
   selection,
   search,
   onSelect,
+  expanded = false,
+  onToggleExpanded,
 }: {
   scope: string;
   commits: Commit[];
@@ -42,6 +46,8 @@ export function HistoryPanel({
   selection: Selection;
   search: string;
   onSelect: (selection: Selection) => void;
+  expanded?: boolean;
+  onToggleExpanded?: () => void;
 }) {
   const graph = useMemo(() => buildGraph(commits), [commits]);
   const rows = commits.map((commit, i) => ({ commit, graph: graph[i] }));
@@ -117,15 +123,29 @@ export function HistoryPanel({
         <span>
           提交历史 <span className="muted-count">{commits.length}</span>
         </span>
-        <button
-          type="button"
-          className="icon-button"
-          aria-label="刷新提交历史"
-          disabled={loading}
-          onClick={onReload}
-        >
-          <RefreshCw size={14} />
-        </button>
+        <span className="history-panel-actions">
+          {onToggleExpanded && (
+            <button
+              type="button"
+              className="icon-button"
+              aria-label={expanded ? '恢复分栏视图' : '展开提交列表'}
+              title={expanded ? '恢复分栏视图' : '展开提交列表'}
+              aria-pressed={expanded}
+              onClick={onToggleExpanded}
+            >
+              {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+            </button>
+          )}
+          <button
+            type="button"
+            className="icon-button"
+            aria-label="刷新提交历史"
+            disabled={loading}
+            onClick={onReload}
+          >
+            <RefreshCw size={14} />
+          </button>
+        </span>
       </div>
       <div className="history-caption">
         <GitBranch size={13} />

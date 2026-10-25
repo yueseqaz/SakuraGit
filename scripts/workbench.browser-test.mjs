@@ -484,6 +484,69 @@ try {
       assert.ok(visible, 'selecting a commit reveals its node in a far-right lane');
       await page.screenshot({ path: `${output}/history-wide-${mode}-${width}.png` });
     }
+    await page.setViewportSize({ width: 1440, height: 920 });
+    const selectedSubject = await page
+      .locator('.commit-row[aria-pressed="true"] strong')
+      .textContent();
+    const initialWidth = await page
+      .locator('.history-panel')
+      .evaluate((element) => element.clientWidth);
+    await page.getByRole('button', { name: '收起侧栏', exact: true }).click();
+    await page.waitForFunction(
+      (width) => document.querySelector('.history-panel').clientWidth > width + 50,
+      initialWidth,
+    );
+    assert.equal(await page.getByRole('navigation', { name: '主导航' }).count(), 0);
+    assert.equal(await page.getByRole('separator', { name: '调整导航栏宽度' }).count(), 0);
+    await page.getByRole('button', { name: '展开提交列表', exact: true }).click();
+    await page.waitForFunction(() => document.querySelector('.history-panel').clientWidth > 1300);
+    assert.equal(
+      await page.locator('.commit-details').isVisible(),
+      false,
+      'focus mode hides details, not commit history',
+    );
+    assert.equal(
+      await page.getByRole('region', { name: '提交图谱水平滚动' }).count(),
+      0,
+      'twenty lanes fit when history has enough room',
+    );
+    assert.equal(
+      await page.locator('.commit-row[aria-pressed="true"] strong').textContent(),
+      selectedSubject,
+    );
+    const complete = await page.locator('.commit-row[aria-pressed="true"]').evaluate((row) => {
+      const text = row.querySelector('strong');
+      const circle = row.querySelector('circle').getBoundingClientRect();
+      const viewport = row.querySelector('.commit-graph-viewport').getBoundingClientRect();
+      return (
+        text.scrollWidth <= text.clientWidth &&
+        circle.left >= viewport.left &&
+        circle.right <= viewport.right
+      );
+    });
+    assert.ok(complete, 'focused history displays both the full subject and selected graph node');
+    await page.screenshot({ path: `${output}/history-focused-${mode}.png` });
+    await page.reload();
+    await page.getByRole('button', { name: '展开侧栏', exact: true }).waitFor();
+    await page.getByRole('button', { name: '展开侧栏', exact: true }).click();
+    await page.getByRole('button', { name: '提交历史', exact: true }).click();
+    await page.getByRole('button', { name: '恢复分栏视图', exact: true }).waitFor();
+    await page.getByRole('button', { name: '恢复分栏视图', exact: true }).click();
+    assert.equal(await page.locator('.commit-details').isVisible(), true);
+    assert.equal(await page.getByRole('separator', { name: '调整导航栏宽度' }).count(), 1);
+    for (const width of [1000, 390]) {
+      await page.setViewportSize({ width, height: 920 });
+      await page.getByRole('button', { name: '收起侧栏', exact: true }).click();
+      await page.getByRole('button', { name: '展开提交列表', exact: true }).click();
+      assert.equal(
+        await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1),
+        false,
+        'collapsed navigation does not cause page overflow',
+      );
+      await page.screenshot({ path: `${output}/history-focused-${mode}-${width}.png` });
+      await page.getByRole('button', { name: '展开侧栏', exact: true }).click();
+      await page.getByRole('button', { name: '恢复分栏视图', exact: true }).click();
+    }
     await checkDesign(page);
     assert.deepEqual(failures, []);
     await page.close();

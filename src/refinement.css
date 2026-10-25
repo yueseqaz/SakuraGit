@@ -290,6 +290,44 @@ small {
   gap: 2px;
   margin-left: auto;
 }
+.history-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.app-shell.has-resizable-sidebar.sidebar-collapsed {
+  grid-template-columns: 0 minmax(0, 1fr);
+}
+.sidebar[hidden] {
+  display: none;
+}
+.app-shell.sidebar-collapsed > .main-content {
+  grid-column: 2;
+}
+.sidebar-toggle {
+  flex-shrink: 0;
+}
+.breadcrumb {
+  min-width: 0;
+  gap: 8px;
+}
+.breadcrumb > span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.history-workbench.history-list-expanded {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+.history-workbench.history-list-expanded > .commit-details,
+.history-workbench.history-list-expanded > .split-handle {
+  display: none;
+}
+.history-list-expanded > .history-panel {
+  border-right: 0;
+}
 .history-graph-scroll-track {
   flex-shrink: 0;
   border-top: 0.5px solid var(--line);
@@ -328,6 +366,7 @@ small {
   white-space: nowrap;
 }
 .commit-meta time {
+  display: inline;
   flex-shrink: 0;
 }
 @media (max-width: 1200px) {
@@ -336,6 +375,11 @@ small {
   }
   .commit-author {
     flex: 1;
+  }
+}
+@media (min-width: 761px) {
+  .history-list-expanded .commit-meta code {
+    display: inline;
   }
 }
 

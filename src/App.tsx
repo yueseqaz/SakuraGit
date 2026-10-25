@@ -25,6 +25,8 @@ import {
   Layers2,
   LoaderCircle,
   Minus,
+  PanelLeftClose,
+  PanelLeftOpen,
   Plus,
   Play,
   RefreshCw,
@@ -73,6 +75,7 @@ import { RecoveryPanel } from './RecoveryPanel';
 import { HistoryActions } from './HistoryActions';
 import { EditorWorkbench } from './EditorWorkbench';
 import { DeveloperPanel } from './DeveloperPanel';
+import { useLayoutToggle } from './useLayoutToggle';
 
 const native = isMyGo();
 type View =
@@ -118,6 +121,8 @@ function Mark({ small = false }: { small?: boolean }) {
 }
 
 export default function App() {
+  const [sidebarCollapsed, setSidebarCollapsed] = useLayoutToggle('sidebar-collapsed');
+  const [historyExpanded, setHistoryExpanded] = useLayoutToggle('history-expanded');
   const sidebarLayout = useSplitLayout({
     name: 'sidebar',
     label: '调整导航栏宽度',
@@ -512,6 +517,22 @@ export default function App() {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (document.querySelector('[role="dialog"]')) return;
+      if (
+        !event.defaultPrevented &&
+        (event.metaKey || event.ctrlKey) &&
+        !event.altKey &&
+        !event.shiftKey &&
+        event.key.toLowerCase() === 'b' &&
+        !(
+          event.target instanceof Element &&
+          event.target.closest(
+            'input, textarea, select, [contenteditable="true"], .cm-editor, .terminal-dock',
+          )
+        )
+      ) {
+        event.preventDefault();
+        setSidebarCollapsed((value) => !value);
+      }
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
         searchRef.current?.focus();
@@ -731,7 +752,7 @@ export default function App() {
 
   return (
     <div
-      className="app-shell has-resizable-sidebar"
+      className={`app-shell has-resizable-sidebar ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}
       ref={sidebarLayout.ref}
       style={sidebarLayout.style}
       data-repo-root={snapshot?.root || ''}
@@ -746,7 +767,7 @@ export default function App() {
         </div>
       </header>
 
-      <aside className="sidebar">
+      <aside className="sidebar" id="workspace-sidebar" hidden={sidebarCollapsed}>
         <button
           className="repository-picker"
           aria-label="打开或切换仓库"
@@ -893,15 +914,26 @@ export default function App() {
           </button>
           <div className="sidebar-version">
             <span>SakuraGit</span>
-            <span>v0.10.3 MyGo</span>
+            <span>v0.10.4 MyGo</span>
           </div>
         </div>
       </aside>
 
-      {sidebarLayout.separator}
+      {!sidebarCollapsed && sidebarLayout.separator}
       <main className="main-content">
         <div className="workspace-topbar">
           <div className="breadcrumb">
+            <button
+              type="button"
+              className="icon-button sidebar-toggle"
+              aria-label={sidebarCollapsed ? '展开侧栏' : '收起侧栏'}
+              title={`${sidebarCollapsed ? '展开侧栏' : '收起侧栏'} (⌘/Ctrl+B)`}
+              aria-expanded={!sidebarCollapsed}
+              aria-controls="workspace-sidebar"
+              onClick={() => setSidebarCollapsed((value) => !value)}
+            >
+              {sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+            </button>
             <FolderGit2 size={16} />
             <span>{snapshot?.name || 'SakuraGit'}</span>
             <ChevronRight size={13} />
@@ -1267,7 +1299,7 @@ export default function App() {
             )}
             {view === 'history' && (
               <ResizableSplit
-                className="history-workbench"
+                className={`history-workbench ${historyExpanded ? 'history-list-expanded' : ''}`}
                 name="history"
                 label="调整历史列表与提交详情宽度"
                 initial={0.43}
@@ -1284,6 +1316,8 @@ export default function App() {
                   onReload={history.reload}
                   selection={selection}
                   search={search}
+                  expanded={historyExpanded}
+                  onToggleExpanded={() => setHistoryExpanded((value) => !value)}
                   onSelect={setSelection}
                 />
                 <HistoryDetails

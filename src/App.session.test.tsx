@@ -148,3 +148,55 @@ it('restores an older selected commit beyond the first history page using a full
   expect(Git.history).toHaveBeenCalledWith(saved.root, old.hash, '', 0);
   expect((screen.getByLabelText('搜索文件或提交') as HTMLInputElement).value).toBe(old.hash);
 });
+
+it('collapses navigation without changing the selected commit and restores both layout controls', async () => {
+  const saved = {
+    ...emptySession(),
+    root: demoSnapshot.root,
+    view: 'history',
+    kind: 'commit',
+    hash: demoSnapshot.commits[2].hash,
+    updatedAt: 123,
+  };
+  vi.mocked(Git.bootstrap).mockResolvedValue({
+    path: saved.root,
+    session: saved,
+    recents: [],
+    ephemeral: false,
+    explicitPath: false,
+  });
+  const view = render(<App />);
+  await waitFor(() => expect(screen.getByTestId('selected-commit').textContent).toBe(saved.hash));
+  fireEvent.click(screen.getByRole('button', { name: '收起侧栏', exact: true }));
+  expect(view.container.querySelector('.sidebar')!.hasAttribute('hidden')).toBe(true);
+  expect(screen.queryByRole('navigation', { name: '主导航' })).toBeNull();
+  expect(screen.queryByRole('separator', { name: '调整导航栏宽度' })).toBeNull();
+  expect(screen.getByTestId('selected-commit').textContent).toBe(saved.hash);
+  fireEvent.click(screen.getByRole('button', { name: '展开提交列表', exact: true }));
+  expect(
+    view.container.querySelector('.history-workbench')!.classList.contains('history-list-expanded'),
+  ).toBe(true);
+  fireEvent.click(screen.getByRole('button', { name: '恢复分栏视图', exact: true }));
+  fireEvent.click(screen.getByRole('button', { name: '展开侧栏', exact: true }));
+  expect(screen.getByRole('navigation', { name: '主导航' })).toBeTruthy();
+  expect(screen.getByRole('separator', { name: '调整导航栏宽度' })).toBeTruthy();
+  expect(screen.getByTestId('selected-commit').textContent).toBe(saved.hash);
+});
+
+it('toggles the sidebar by keyboard without stealing text editing shortcuts', async () => {
+  vi.mocked(Git.bootstrap).mockResolvedValue({
+    path: demoSnapshot.root,
+    session: emptySession(),
+    recents: [],
+    ephemeral: false,
+    explicitPath: true,
+  });
+  render(<App />);
+  const input = await screen.findByLabelText('提交说明');
+  fireEvent.keyDown(input, { key: 'b', ctrlKey: true });
+  expect(screen.getByRole('button', { name: '收起侧栏', exact: true })).toBeTruthy();
+  fireEvent.keyDown(window, { key: 'b', ctrlKey: true });
+  expect(screen.getByRole('button', { name: '展开侧栏', exact: true })).toBeTruthy();
+  fireEvent.keyDown(window, { key: 'b', metaKey: true });
+  expect(screen.getByRole('button', { name: '收起侧栏', exact: true })).toBeTruthy();
+});
