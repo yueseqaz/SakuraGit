@@ -53,6 +53,7 @@ try {
     merge = false,
     viewport = { width: 1440, height: 920 },
     historyCount = 0,
+    customHistory = null,
   ) {
     const page = await browser.newPage({ viewport, deviceScaleFactor: 1, reducedMotion: 'reduce' });
     const failures = [];
@@ -71,19 +72,22 @@ try {
         },
       ],
     };
-    const history = historyCount
-      ? Array.from({ length: historyCount }, (_, index) => ({
-          ...snapshot.commits[0],
-          hash: (index + 1000).toString(16).padStart(40, '0'),
-          short: (index + 1000).toString(16).padStart(7, '0'),
-          parents: index + 1 < historyCount ? [(index + 1001).toString(16).padStart(40, '0')] : [],
-          subject: `Pagination fixture ${index + 1}`,
-          refs: '',
-        }))
-      : snapshot.commits;
-    if (historyCount) {
+    const history =
+      customHistory ??
+      (historyCount
+        ? Array.from({ length: historyCount }, (_, index) => ({
+            ...snapshot.commits[0],
+            hash: (index + 1000).toString(16).padStart(40, '0'),
+            short: (index + 1000).toString(16).padStart(7, '0'),
+            parents:
+              index + 1 < historyCount ? [(index + 1001).toString(16).padStart(40, '0')] : [],
+            subject: `Pagination fixture ${index + 1}`,
+            refs: '',
+          }))
+        : snapshot.commits);
+    if (historyCount || customHistory) {
       snapshot.commits = history.slice(0, 100);
-      snapshot.historyHasMore = true;
+      snapshot.historyHasMore = history.length > 100;
     }
     await page.addInitScript(
       ({ snapshot, patch, conflict, palette, appearance, history }) => {
@@ -386,6 +390,104 @@ try {
       assert.deepEqual(failures, []);
       await page.close();
     }
+  for (const mode of ['light', 'dark']) {
+    const base = demoSnapshot.commits[0];
+    const parents = Array.from({ length: 20 }, (_, i) => (i + 2000).toString(16).padStart(40, '0'));
+    const ancestors = Array.from({ length: 20 }, (_, i) =>
+      (i + 3000).toString(16).padStart(40, '0'),
+    );
+    const root = 'f'.repeat(40);
+    const history = [
+      {
+        ...base,
+        hash: 'e'.repeat(40),
+        parents,
+        subject: 'Merge fixture with twenty parents',
+        refs: '',
+      },
+      ...parents.map((hash, i) => ({
+        ...base,
+        hash,
+        parents: [ancestors[i]],
+        subject: `Wide branch ${i + 1} with a long commit subject`,
+        author: 'Very long author name for graph layout',
+        refs: '',
+      })),
+      ...ancestors.map((hash, i) => ({
+        ...base,
+        hash,
+        parents: [root],
+        subject: `Older branch ${i + 1}`,
+        refs: '',
+      })),
+      { ...base, hash: root, parents: [], subject: 'Shared ancestor', refs: '' },
+    ];
+    const { page, failures } = await fixture(
+      'mist',
+      mode,
+      false,
+      { width: 1440, height: 920 },
+      0,
+      history,
+    );
+    await page.getByRole('button', { name: '提交历史', exact: true }).click();
+    const scrollbar = page.getByRole('region', { name: '提交图谱水平滚动' });
+    await scrollbar.waitFor();
+    const geometry = () =>
+      page
+        .locator('.commit-row')
+        .first()
+        .evaluate((row) => {
+          const graph = row.querySelector('.commit-graph-viewport').getBoundingClientRect();
+          const text = row.querySelector('.commit-info').getBoundingClientRect();
+          const svg = row.querySelector('svg');
+          return {
+            graphRight: graph.right,
+            textLeft: text.left,
+            textRight: text.right,
+            rowRight: row.getBoundingClientRect().right,
+            graphWidth: graph.width,
+            textWidth: text.width,
+            fullGraphWidth: Number(svg.getAttribute('width')),
+          };
+        });
+    for (const width of [1440, 1000, 800]) {
+      await page.setViewportSize({ width, height: 920 });
+      await page.waitForTimeout(100);
+      const before = await geometry();
+      assert.ok(before.fullGraphWidth >= 382, 'graph includes all off-page parent lanes');
+      assert.ok(before.graphRight <= before.textLeft, 'graph never overlaps commit text');
+      assert.ok(before.textRight <= before.rowRight, 'metadata stays inside its row');
+      assert.ok(
+        before.textWidth > before.graphWidth,
+        'commit information keeps priority in narrow panels',
+      );
+      await scrollbar.evaluate((element) => {
+        element.scrollLeft = element.scrollWidth;
+        element.dispatchEvent(new Event('scroll'));
+      });
+      const after = await geometry();
+      assert.equal(
+        after.textLeft,
+        before.textLeft,
+        'horizontal graph scrolling does not move text',
+      );
+      await page.locator('.commit-row').nth(20).click();
+      const visible = await page
+        .locator('.commit-row')
+        .nth(20)
+        .evaluate((row) => {
+          const node = row.querySelector('circle').getBoundingClientRect();
+          const viewport = row.querySelector('.commit-graph-viewport').getBoundingClientRect();
+          return node.left >= viewport.left && node.right <= viewport.right;
+        });
+      assert.ok(visible, 'selecting a commit reveals its node in a far-right lane');
+      await page.screenshot({ path: `${output}/history-wide-${mode}-${width}.png` });
+    }
+    await checkDesign(page);
+    assert.deepEqual(failures, []);
+    await page.close();
+  }
   for (const mode of ['light', 'dark']) {
     const { page, failures } = await fixture(
       'mist',

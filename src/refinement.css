@@ -274,13 +274,53 @@ small {
   font-size: 14px;
   color: var(--ink);
 }
-.commit-graph {
-  width: 116px;
-  max-width: 116px;
+.commit-graph-viewport {
+  width: var(--history-graph-viewport);
+  flex: 0 0 var(--history-graph-viewport);
+  align-self: stretch;
   overflow: hidden;
+}
+.commit-graph {
+  display: block;
+  max-width: none;
+  height: 100%;
+}
+.history-graph-navigation {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+}
+.history-graph-scroll-track {
+  flex-shrink: 0;
+  border-top: 0.5px solid var(--line);
+}
+.history-graph-scroll {
+  width: var(--history-graph-viewport);
+  height: 16px;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) var(--panel);
+}
+.history-graph-scroll::-webkit-scrollbar {
+  height: 10px;
+}
+.history-graph-scroll::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 0;
+}
+.commit-meta {
+  min-width: 0;
 }
 .commit-author {
   min-width: 0;
+  flex-shrink: 1;
+}
+.commit-author .author-avatar {
+  flex-shrink: 0;
+}
+.commit-meta code {
+  flex-shrink: 0;
 }
 .commit-author b {
   overflow: hidden;

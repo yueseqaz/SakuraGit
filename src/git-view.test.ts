@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { buildGraph, isStaged, isUnstaged, parseDiff, splitDiff } from './git-view';
+import {
+  buildGraph,
+  graphContentWidth,
+  isStaged,
+  isUnstaged,
+  parseDiff,
+  splitDiff,
+} from './git-view';
 import type { Commit, File } from './mygo';
 
 describe('unified diff', () => {
@@ -94,6 +101,38 @@ describe('commit ancestry', () => {
   it('handles multiple disconnected roots', () => {
     const rows = buildGraph([commit('one', []), commit('two', [])]);
     expect(rows.every((row) => row.paths.length === 0)).toBe(true);
+  });
+  it('reserves space for all parents even when their commit nodes are not loaded yet', () => {
+    const rows = buildGraph([
+      commit(
+        'merge',
+        Array.from({ length: 20 }, (_, i) => `parent-${i}`),
+      ),
+    ]);
+    expect(rows[0].lane).toBe(0);
+    expect(rows[0].laneCount).toBe(20);
+    expect(graphContentWidth(rows)).toBe(382);
+    expect(rows[0].paths).toHaveLength(20);
+  });
+  it('keeps every path within the full graph and keeps existing edges stable across pagination', () => {
+    const parents = Array.from({ length: 20 }, (_, i) => `branch-${i}`);
+    const commits = [
+      commit('merge', parents),
+      ...parents.map((hash) => commit(hash, ['root'])),
+      commit('root', []),
+    ];
+    const firstPage = buildGraph(commits.slice(0, 5));
+    const rows = buildGraph(commits);
+    expect(rows.slice(0, 5)).toEqual(firstPage);
+    const width = graphContentWidth(rows);
+    for (const row of rows) {
+      expect(20 + row.lane * 18 + 7).toBeLessThan(width);
+      for (const path of row.paths) {
+        const coordinates = [...path.d.matchAll(/\d+/g)].map((match) => Number(match[0]));
+        expect(Math.max(...coordinates)).toBeLessThan(width);
+      }
+    }
+    expect(graphContentWidth([])).toBe(56);
   });
 });
 

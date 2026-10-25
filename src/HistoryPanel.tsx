@@ -1,8 +1,15 @@
-import { useMemo, type ReactNode } from 'react';
-import { GitBranch, GitCommitHorizontal, LoaderCircle, RefreshCw } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  GitBranch,
+  GitCommitHorizontal,
+  LoaderCircle,
+  RefreshCw,
+} from 'lucide-react';
 import type { Commit } from './mygo';
 import type { Selection } from './DiffPanel';
-import { buildGraph } from './git-view';
+import { buildGraph, graphContentWidth } from './git-view';
 import { useVirtualRows } from './useVirtualRows';
 import { useAutoLoadMore } from './useAutoLoadMore';
 const formatDate = (date: string) =>
@@ -57,9 +64,46 @@ export function HistoryPanel({
     hasMore,
     loadMore: onLoadMore,
   });
-  // Keep the graph column bounded. A very wide branch fan-out must not push
-  // commit subjects and author metadata off-screen.
-  const graphWidth = Math.min(116, graph.reduce((width, row) => Math.max(width, 40 + row.lane * 18), 56));
+  const graphWidth = graphContentWidth(graph);
+  const graphScroll = useRef<HTMLDivElement>(null);
+  const [graphViewport, setGraphViewport] = useState(56);
+  const [graphOffset, setGraphOffset] = useState(0);
+  const graphOverflows = !search && graphWidth > graphViewport;
+  const selectedLane = selectedIndex >= 0 ? graph[selectedIndex]?.lane : undefined;
+  useEffect(() => {
+    const list = windowed.ref.current;
+    if (!list) return;
+    const resize = () =>
+      setGraphViewport(Math.min(graphWidth, Math.max(56, Math.floor(list.clientWidth * 0.36))));
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(resize);
+    observer?.observe(list);
+    resize();
+    return () => observer?.disconnect();
+  }, [graphWidth, windowed.ref]);
+  useEffect(() => {
+    if (graphScroll.current) graphScroll.current.scrollLeft = 0;
+    setGraphOffset(0);
+  }, [scope, search]);
+  useEffect(() => {
+    const scroll = graphScroll.current;
+    if (!scroll) return;
+    const maxOffset = Math.max(0, graphWidth - graphViewport);
+    let offset = Math.min(scroll.scrollLeft, maxOffset);
+    if (selectedLane !== undefined) {
+      const x = 20 + selectedLane * 18;
+      if (x < offset + 10) offset = Math.max(0, x - 10);
+      else if (x > offset + graphViewport - 10)
+        offset = Math.min(maxOffset, x - graphViewport + 10);
+    }
+    scroll.scrollLeft = offset;
+    setGraphOffset(offset);
+  }, [scope, search, selectedLane, selectedIndex, graphWidth, graphViewport]);
+  const scrollGraph = (delta: number) => {
+    const scroll = graphScroll.current;
+    if (!scroll) return;
+    scroll.scrollLeft += delta;
+    setGraphOffset(scroll.scrollLeft);
+  };
   return (
     <section
       className="history-panel"
@@ -67,6 +111,7 @@ export function HistoryPanel({
       data-loaded-count={commits.length}
       data-has-more={hasMore}
       data-loading={loading}
+      style={{ '--history-graph-viewport': `${graphViewport}px` } as CSSProperties}
     >
       <div className="panel-title">
         <span>
@@ -85,6 +130,28 @@ export function HistoryPanel({
       <div className="history-caption">
         <GitBranch size={13} />
         {search ? '搜索全部提交' : '全部分支'}
+        {graphOverflows && (
+          <span className="history-graph-navigation">
+            <button
+              type="button"
+              className="icon-button"
+              aria-label="向左滚动图谱"
+              disabled={graphOffset <= 0}
+              onClick={() => scrollGraph(-graphViewport * 0.75)}
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <button
+              type="button"
+              className="icon-button"
+              aria-label="向右滚动图谱"
+              disabled={graphOffset >= graphWidth - graphViewport - 1}
+              onClick={() => scrollGraph(graphViewport * 0.75)}
+            >
+              <ChevronRight size={14} />
+            </button>
+          </span>
+        )}
       </div>
       <div className="commit-list" ref={windowed.ref}>
         {!!windowed.before && <div style={{ height: windowed.before }} aria-hidden="true" />}
@@ -97,35 +164,45 @@ export function HistoryPanel({
               onClick={() => onSelect({ kind: 'commit', hash: commit.hash })}
             >
               {!search && (
-                <svg
-                  className="commit-graph"
-                  width={graphWidth}
-                  height={84}
-                  viewBox={`0 0 ${graphWidth} 66`}
-                  preserveAspectRatio="none"
-                  aria-hidden="true"
+                <span
+                  className="commit-graph-viewport"
+                  onWheel={(event) => {
+                    if (graphOverflows && (event.deltaX || event.shiftKey)) {
+                      scrollGraph(event.deltaX || event.deltaY);
+                    }
+                  }}
                 >
-                  {row.paths.map((path, i) => (
-                    <path d={path.d} stroke={path.color} strokeWidth="2" fill="none" key={i} />
-                  ))}
-                  <circle
-                    cx={20 + row.lane * 18}
-                    cy="33"
-                    r="5"
-                    fill="var(--panel)"
-                    stroke={row.color}
-                    strokeWidth="2.5"
-                  />
-                </svg>
+                  <svg
+                    className="commit-graph"
+                    width={graphWidth}
+                    height={84}
+                    viewBox={`0 0 ${graphWidth} 66`}
+                    preserveAspectRatio="none"
+                    aria-hidden="true"
+                    style={{ transform: `translateX(${-graphOffset}px)` }}
+                  >
+                    {row.paths.map((path, i) => (
+                      <path d={path.d} stroke={path.color} strokeWidth="2" fill="none" key={i} />
+                    ))}
+                    <circle
+                      cx={20 + row.lane * 18}
+                      cy="33"
+                      r="5"
+                      fill="var(--panel)"
+                      stroke={row.color}
+                      strokeWidth="2.5"
+                    />
+                  </svg>
+                </span>
               )}
               <span className="commit-info">
-                <strong>{commit.subject}</strong>
+                <strong title={commit.subject}>{commit.subject}</strong>
                 <span className="commit-meta">
                   <span className="commit-author" title={commit.authorEmail}>
                     <span className="author-avatar small">
                       {commit.author.slice(0, 2).toUpperCase()}
                     </span>
-                    <b>{commit.author}</b>
+                    <b title={commit.author}>{commit.author}</b>
                   </span>
 
                   <time>{formatDate(commit.date)}</time>
@@ -179,6 +256,20 @@ export function HistoryPanel({
           ) : null}
         </div>
       </div>
+      {!search && (
+        <div className="history-graph-scroll-track" hidden={!graphOverflows}>
+          <div
+            className="history-graph-scroll"
+            ref={graphScroll}
+            role="region"
+            aria-label="提交图谱水平滚动"
+            tabIndex={0}
+            onScroll={(event) => setGraphOffset(event.currentTarget.scrollLeft)}
+          >
+            <div style={{ width: graphWidth, height: 1 }} />
+          </div>
+        </div>
+      )}
     </section>
   );
 }

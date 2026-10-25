@@ -66,6 +66,7 @@ export function parseDiff(text: string, limit?: number): DiffLine[] {
 export const graphColors = ['var(--blue-9)', 'var(--bronze-9)', 'var(--iris-9)', 'var(--ruby-9)', 'var(--jade-9)'];
 export type GraphRow = {
   lane: number;
+  laneCount: number;
   color: string;
   paths: { d: string; color: string }[];
 };
@@ -112,8 +113,13 @@ export function buildGraph(commits: Commit[]): GraphRow[] {
         color: colorFor(parent),
       });
     });
-    return { lane, color, paths };
+    return { lane, laneCount: Math.max(before.length, lanes.length), color, paths };
   });
+}
+
+export function graphContentWidth(rows: GraphRow[]): number {
+  // Include passing lanes and unloaded parents, not just visible commit nodes.
+  return rows.reduce((width, row) => Math.max(width, 40 + (row.laneCount - 1) * 18), 56);
 }
 
 export const isStaged = (file: File) => file.index !== '.' && !file.untracked && !file.conflicted;
