@@ -80,12 +80,17 @@ export function HistoryPanel({
     const list = windowed.ref.current;
     if (!list) return;
     const resize = () =>
-      setGraphViewport(Math.min(graphWidth, Math.max(56, Math.floor(list.clientWidth * 0.36))));
+      setGraphViewport(
+        Math.min(
+          graphWidth,
+          Math.max(56, expanded ? list.clientWidth - 320 : Math.floor(list.clientWidth * 0.36)),
+        ),
+      );
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(resize);
     observer?.observe(list);
     resize();
     return () => observer?.disconnect();
-  }, [graphWidth, windowed.ref]);
+  }, [expanded, graphWidth, windowed.ref]);
   useEffect(() => {
     if (graphScroll.current) graphScroll.current.scrollLeft = 0;
     setGraphOffset(0);

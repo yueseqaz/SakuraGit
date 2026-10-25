@@ -538,6 +538,14 @@ try {
       await page.setViewportSize({ width, height: 920 });
       await page.getByRole('button', { name: '收起侧栏', exact: true }).click();
       await page.getByRole('button', { name: '展开提交列表', exact: true }).click();
+      if (width === 1000) {
+        await page.waitForFunction(() => {
+          const viewport = document.querySelector('.commit-graph-viewport');
+          return (
+            viewport.clientWidth >= Number(viewport.querySelector('svg').getAttribute('width'))
+          );
+        });
+      }
       assert.equal(
         await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1),
         false,
