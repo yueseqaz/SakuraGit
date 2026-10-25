@@ -500,6 +500,7 @@ try {
     assert.equal(await page.getByRole('separator', { name: '调整导航栏宽度' }).count(), 0);
     await page.getByRole('button', { name: '展开提交列表', exact: true }).click();
     await page.waitForFunction(() => document.querySelector('.history-panel').clientWidth > 1300);
+    await scrollbar.waitFor({ state: 'hidden' });
     assert.equal(
       await page.locator('.commit-details').isVisible(),
       false,
